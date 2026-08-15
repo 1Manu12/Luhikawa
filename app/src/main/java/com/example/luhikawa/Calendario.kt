@@ -100,7 +100,7 @@ fun CalendarScreen() {
             ) {
                 Icon(Icons.Default.KeyboardArrowLeft, contentDescription = null, tint = TextBeigea)
                 Spacer(modifier = Modifier.width(16.dp))
-                Text("Mayo 2026", style = TextStyle(fontFamily = CustomFontFamilya, fontSize = 22.sp, color = TextBeigea))
+                Text("Mayo 2026", style = TextStyle(fontFamily = InriaSerif, fontSize = 22.sp, color = TextBeigea))
                 Spacer(modifier = Modifier.width(16.dp))
                 Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = TextBeigea)
             }
@@ -116,7 +116,7 @@ fun CalendarScreen() {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text("Tareas asignadas", style = TextStyle(fontFamily = CustomFontFamilya, fontSize = 20.sp, color = TextBeigea, fontWeight = FontWeight.Bold))
+            Text("Tareas asignadas", style = TextStyle(fontFamily = InriaSerif, fontSize = 20.sp, color = TextBeigea, fontWeight = FontWeight.Bold))
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -130,7 +130,7 @@ fun CalendarScreen() {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(24.dp).border(1.dp, TextDarka, CircleShape))
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text("Presentación", style = TextStyle(fontFamily = CustomFontFamilya, fontSize = 18.sp, color = TextDarka))
+                    Text("Presentación", style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, color = TextDarka))
                 }
             }
 
@@ -146,7 +146,7 @@ fun CalendarScreen() {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(24.dp).border(1.dp, TextBeigea, CircleShape))
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text("Presentación", style = TextStyle(fontFamily = CustomFontFamilya, fontSize = 18.sp, color = TextBeigea))
+                    Text("Presentación", style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, color = TextBeigea))
                 }
             }
         }

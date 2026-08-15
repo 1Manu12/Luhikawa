@@ -84,7 +84,7 @@ fun RecordatorioScreen() {
             Text(
                 text = "Detalles",
                 style = TextStyle(
-                    fontFamily = CustomFontFamilya,
+                    fontFamily = InriaSerif,
                     fontSize = 26.sp,
                     color = TextBeigea
                 )
@@ -154,7 +154,7 @@ fun RecordatorioScreen() {
                 Text(
                     text = "GUARDAR",
                     style = TextStyle(
-                        fontFamily = CustomFontFamilya,
+                        fontFamily = InriaSerif,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -210,7 +210,7 @@ fun NuevoRecordatorioHeader() {
         Text(
             text = "NUEVO RECORDATORIO",
             style = TextStyle(
-                fontFamily = CustomFontFamilya,
+                fontFamily = InriaSerif,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextDarka
@@ -224,7 +224,7 @@ fun InputLabel(text: String) {
     Text(
         text = text,
         style = TextStyle(
-            fontFamily = CustomFontFamilya,
+            fontFamily = InriaSerif,
             fontSize = 16.sp,
             color = TextBeigea.copy(alpha = 0.8f)
         )
@@ -245,13 +245,13 @@ fun OutlinedTextFieldCustom(
             Text(
                 text = placeholder,
                 style = TextStyle(
-                    fontFamily = CustomFontFamilya,
+                    fontFamily = InriaSerif,
                     color = Color.Gray
                 )
             )
         },
         textStyle = TextStyle(
-            fontFamily = CustomFontFamilya,
+            fontFamily = InriaSerif,
             color = TextBeigea,
             fontSize = 18.sp
         ),
@@ -346,7 +346,7 @@ fun ImportanceSelector(
                 Text(
                     text = text,
                     style = TextStyle(
-                        fontFamily = CustomFontFamilya,
+                        fontFamily = InriaSerif,
                         fontSize = 18.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) BgDarka else TextBeigea
@@ -383,7 +383,7 @@ fun DateTimeSelector(
         Text(
             text = text,
             style = TextStyle(
-                fontFamily = CustomFontFamilya,
+                fontFamily = InriaSerif,
                 fontSize = 16.sp,
                 color = TextBeigea
             )

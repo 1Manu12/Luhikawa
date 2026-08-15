@@ -105,7 +105,7 @@ fun AiScreen() {
                 Text(
                     text = "AI",
                     style = TextStyle(
-                        fontFamily = CustomFontFamilya,
+                        fontFamily = InriaSerif,
                         fontSize = 32.sp,
                         color = TextBeigea,
                         fontWeight = FontWeight.Bold
@@ -121,7 +121,7 @@ fun AiScreen() {
                         text = "¿Para qué sirve organizar...?",
                         modifier = Modifier.padding(14.dp),
                         style = TextStyle(
-                            fontFamily = CustomFontFamilya,
+                            fontFamily = InriaSerif,
                             fontSize = 15.sp,
                             color = TextDarka
                         )
@@ -144,7 +144,7 @@ fun AiScreen() {
                         text = "Porque ayuda a...",
                         modifier = Modifier.padding(14.dp),
                         style = TextStyle(
-                            fontFamily = CustomFontFamilya,
+                            fontFamily = InriaSerif,
                             fontSize = 15.sp,
                             color = TextDarka
                         )
@@ -157,7 +157,7 @@ fun AiScreen() {
             Text(
                 text = "Aportaciones de la IA",
                 style = TextStyle(
-                    fontFamily = CustomFontFamilya,
+                    fontFamily = InriaSerif,
                     fontSize = 20.sp,
                     color = TextBeigea,
                     fontWeight = FontWeight.Bold
@@ -183,7 +183,7 @@ fun AiScreen() {
                         Text(
                             text = "Sugerencia\nde tarea",
                             style = TextStyle(
-                                fontFamily = CustomFontFamilya,
+                                fontFamily = InriaSerif,
                                 fontSize = 13.sp,
                                 color = TextDarka,
                                 fontWeight = FontWeight.Bold
@@ -207,7 +207,7 @@ fun AiScreen() {
                         Text(
                             text = "Optimización\nde contenido",
                             style = TextStyle(
-                                fontFamily = CustomFontFamilya,
+                                fontFamily = InriaSerif,
                                 fontSize = 13.sp,
                                 color = TextDarka,
                                 fontWeight = FontWeight.Bold
@@ -238,7 +238,7 @@ fun AiScreen() {
                         Text(
                             text = "Frases de\nmotivación",
                             style = TextStyle(
-                                fontFamily = CustomFontFamilya,
+                                fontFamily = InriaSerif,
                                 fontSize = 13.sp,
                                 color = TextDarka,
                                 fontWeight = FontWeight.Bold

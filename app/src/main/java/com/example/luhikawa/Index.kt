@@ -54,8 +54,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.luhikawa.ui.theme.LuhikawaTheme
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Spacer
 
 val BackgroundColor = Color(0xFF1A1717)
 val AccentColor = Color(0xFFC7AF93)
@@ -70,10 +68,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LuhikawaTheme {
-                Greeting()
+//                Greeting()
 //                RecordatorioScreen()
-//                LoginScreen()
-//             CalendarScreen()
+                  LoginScreen()
+//                CalendarScreen()
 //                AiScreen()
 
             }
