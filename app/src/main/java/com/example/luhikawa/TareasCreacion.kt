@@ -3,47 +3,175 @@ package com.example.luhikawa
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.luhikawa.R
-import com.example.luhikawa.ui.theme.LuhikawaTheme
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.Canvas
-import androidx.compose.ui.graphics.drawscope.Stroke
+
+class MainActivityTarea : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MaterialTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = BgDarka
+                ) {
+                    TareaScreen()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TareaScreen() {
+    var taskName by remember { mutableStateOf("") }
+    var taskDescription by remember { mutableStateOf("") }
+    var selectedImportance by remember { mutableStateOf("Media") }
+    var selectedDate by remember { mutableStateOf("15 Oct 2023") }
+    var selectedTime by remember { mutableStateOf("18:00") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BgDarka)
+    ) {
+        HeaderSection()
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 24.dp)
+                .padding(top = 16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(BgBeigea)
+                    .padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "NUEVA TAREA",
+                    style = TextStyle(
+                        fontFamily = InriaSerif,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextDarka
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Detalles",
+                style = TextStyle(
+                    fontFamily = InriaSerif,
+                    fontSize = 26.sp,
+                    color = TextBeigea
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            InputLabel(text = "Nombre de la tarea")
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextFieldCustom(
+                value = taskName,
+                onValueChange = { taskName = it },
+                placeholder = "Ej: Proyecto de matemáticas"
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            InputLabel(text = "Descripción")
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextFieldCustom(
+                value = taskDescription,
+                onValueChange = { taskDescription = it },
+                placeholder = "Ej: Investigar fuentes y redactar..."
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            InputLabel(text = "Prioridad")
+            Spacer(modifier = Modifier.height(8.dp))
+            ImportanceSelector(
+                selectedOption = selectedImportance,
+                onOptionSelected = { selectedImportance = it }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            InputLabel(text = "Fecha y Hora límite")
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                DateTimeSelector(
+                    icon = Icons.Outlined.CalendarMonth,
+                    text = selectedDate,
+                    modifier = Modifier.weight(1f)
+                )
+                DateTimeSelector(
+                    icon = Icons.Default.Schedule,
+                    text = selectedTime,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Button(
+                onClick = { },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BgBeigea,
+                    contentColor = TextDarka
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "GUARDAR TAREA",
+                    style = TextStyle(
+                        fontFamily = InriaSerif,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        BottomNavBar()
+    }
+}

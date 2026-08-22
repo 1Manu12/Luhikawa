@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.sp
 import com.example.luhikawa.ui.theme.LuhikawaTheme
 
 val BackgroundColor = Color(0xFF1A1717)
-val AccentColor = Color(0xFFC7AF93)
+val AccentColor3 = Color(0xFFC7AF93)
 
 val InriaSerif = FontFamily(
     Font(R.font.inriaserif_regular)
@@ -70,9 +70,12 @@ class MainActivity : ComponentActivity() {
             LuhikawaTheme {
 //                Greeting()
 //                RecordatorioScreen()
-                  LoginScreen()
+ //                 LoginScreen()
 //                CalendarScreen()
 //                AiScreen()
+//                RegistroScreen()
+//                TareaScreen()
+                PerfilScreen()
 
             }
         }
@@ -127,7 +130,7 @@ fun RectanguloConImagen() {
         modifier = Modifier
             .fillMaxWidth()
             .height(65.dp)
-            .background(AccentColor),
+            .background(AccentColor32),
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -180,11 +183,11 @@ fun EtiquetaTexto(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected || isPressed) AccentColor else BackgroundColor,
+        targetValue = if (isSelected || isPressed) AccentColor32 else BackgroundColor,
         label = "fondoAnimado"
     )
     val textColor by animateColorAsState(
-        targetValue = if (isSelected || isPressed) BackgroundColor else AccentColor,
+        targetValue = if (isSelected || isPressed) BackgroundColor else AccentColor32,
         label = "textoAnimado"
     )
 
@@ -194,7 +197,7 @@ fun EtiquetaTexto(
             .background(backgroundColor)
             .border(
                 width = 2.dp,
-                color = AccentColor,
+                color = AccentColor32,
                 shape = RoundedCornerShape(16.dp)
             )
             .clickable(
@@ -221,7 +224,7 @@ fun RectanguloCafe(textoTarea: String) {
             .fillMaxWidth()
             .height(70.dp)
             .background(
-                color = AccentColor,
+                color = AccentColor32,
                 shape = RoundedCornerShape(22.dp)
             ),
         contentAlignment = Alignment.CenterStart
@@ -262,7 +265,7 @@ fun RectanguloNoCafe(textoTarea: String) {
             )
             .border(
                 width = 2.dp,
-                color = AccentColor,
+                color = AccentColor32,
                 shape = RoundedCornerShape(22.dp)
             ),
         contentAlignment = Alignment.CenterStart
@@ -275,7 +278,7 @@ fun RectanguloNoCafe(textoTarea: String) {
                 modifier = Modifier.size(36.dp)
             ) {
                 drawCircle(
-                    color = AccentColor,
+                    color = AccentColor32,
                     radius = size.minDimension / 2f,
                     style = Stroke(width = 2f)
                 )

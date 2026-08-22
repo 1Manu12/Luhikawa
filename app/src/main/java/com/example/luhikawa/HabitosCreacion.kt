@@ -185,7 +185,6 @@ fun HeaderSection() {
             modifier = Modifier.size(24.dp)
         )
 
-        // Logo LK integrado en el encabezado
         Image(
             painter = painterResource(id = R.drawable.logolk),
             contentDescription = "Logo LK",
