@@ -1,4 +1,4 @@
-package com.example.luhikawa
+package com.example.finalproject.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

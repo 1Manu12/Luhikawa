@@ -1,4 +1,4 @@
-package com.example.luhikawa
+package com.example.finalproject.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.luhikawa.PerfilScreen
 import com.example.luhikawa.ui.theme.LuhikawaTheme
 
 val BackgroundColor = Color(0xFF1A1717)
