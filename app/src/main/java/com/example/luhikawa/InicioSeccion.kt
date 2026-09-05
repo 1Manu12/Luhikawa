@@ -1,6 +1,8 @@
 package com.example.luhikawa
 
 import android.os.Bundle
+import android.util.Base64
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,10 +32,31 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.launch
+import java.security.SecureRandom
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 
 
 val BgDarka = Color(0xFF1A1717)
@@ -58,7 +81,8 @@ class MainActivityLogin : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = BgDarka
                 ) {
-                    LoginScreen()
+                    val navController = rememberNavController()
+                    LoginScreen(navController = navController)
                 }
             }
         }
@@ -66,10 +90,17 @@ class MainActivityLogin : ComponentActivity() {
 }
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(navController: NavController) {
     var usuario by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val auth = remember { FirebaseAuth.getInstance() }
+    val db = remember { FirebaseFirestore.getInstance() }
+    val credentialManager = remember { CredentialManager.create(context) }
 
     val spacingXS = 24.dp
     val spacingS = 80.dp
@@ -141,6 +172,7 @@ fun LoginScreen() {
             textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = AccentBordera,
                 unfocusedBorderColor = AccentBordera,
@@ -148,18 +180,81 @@ fun LoginScreen() {
             ),
             leadingIcon = {
                 Icon(Icons.Default.Lock, contentDescription = "Icono Contraseña", tint = TextBeigea.copy(alpha = 0.7f))
+            },
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                val description = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = description, tint = TextBeigea.copy(alpha = 0.7f))
+                }
             }
         )
 
         Spacer(modifier = Modifier.height(spacingL))
 
         Button(
-            onClick = { },
+            onClick = {
+                navController.navigate("index") {
+                    popUpTo("login") { inclusive = true }
+                }
+            },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             colors = ButtonDefaults.buttonColors(containerColor = BgBeigea, contentColor = TextDarka),
             shape = RoundedCornerShape(28.dp)
         ) {
             Text("Inicio de sesión", style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, fontWeight = FontWeight.Bold))
+        }
+
+        Spacer(modifier = Modifier.height(spacingM))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .background(BgDarka, shape = CircleShape)
+                    .clickable {
+                        coroutineScope.launch {
+                            try {
+                                val secureRandom = SecureRandom()
+                                val bytes = ByteArray(64)
+                                secureRandom.nextBytes(bytes)
+                                val nonce = Base64.encodeToString(bytes, Base64.NO_WRAP)
+
+                                val googleIdOption = GetGoogleIdOption.Builder()
+                                    .setServerClientId("550323438631-7ju4fallk6fvg6vce4s1vbdtfguvb4tp.apps.googleusercontent.com")
+                                    .setFilterByAuthorizedAccounts(false)
+                                    .setNonce(nonce)
+                                    .build()
+
+                                val request = GetCredentialRequest.Builder()
+                                    .addCredentialOption(googleIdOption)
+                                    .build()
+
+                                val result = credentialManager.getCredential(
+                                    context = context,
+                                    request = request
+                                )
+
+                                handleGoogleCredentialResponse(result, auth, db, context, navController)
+
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error de Google: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_google),
+                    contentDescription = "Registrarse con Google",
+                    modifier = Modifier.size(32.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(spacingM))
@@ -177,16 +272,73 @@ fun LoginScreen() {
                 fontFamily = InriaSerif, fontSize = 18.sp, color = TextBeigea,
                 textDecoration = TextDecoration.Underline, textAlign = TextAlign.Center
             ),
-            modifier = Modifier.clickable { }
+            modifier = Modifier.clickable {
+                navController.navigate("registro")
+            }
         )
 
         Spacer(modifier = Modifier.height(spacingL))
 
-        Image(
-            painter = painterResource(id = R.drawable.gato2),
-            contentDescription = "Gatito durmiendo",
-            modifier = Modifier.fillMaxWidth(),
-            contentScale = ContentScale.FillWidth
-        )
+//        Image(
+//            painter = painterResource(id = R.drawable.gato2),
+//            contentDescription = "Gatito durmiendo",
+//            modifier = Modifier.fillMaxWidth(),
+//            contentScale = ContentScale.FillWidth
+//        )
     }
 }
+
+private fun handleGoogleCredentialResponse(
+    result: GetCredentialResponse,
+    auth: FirebaseAuth,
+    db: FirebaseFirestore,
+    context: Context,
+    navController: NavController
+) {
+    val credential = result.credential
+    if (credential is CustomCredential &&
+        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+    ) {
+        try {
+            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+            val googleIdToken = googleIdTokenCredential.idToken
+
+            val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
+
+            auth.signInWithCredential(firebaseCredential)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val firebaseUser = auth.currentUser
+                        val userId = firebaseUser?.uid ?: ""
+                        val email = firebaseUser?.email ?: ""
+                        val nombre = firebaseUser?.displayName ?: "Usuario Google"
+
+                        val userMap = hashMapOf(
+                            "uid" to userId,
+                            "usuario" to nombre,
+                            "nombreCompleto" to nombre,
+                            "email" to email
+                        )
+
+                        db.collection("users").document(userId)
+                            .set(userMap, SetOptions.merge())
+                            .addOnSuccessListener {
+                                // MENSAJE DE BIENVENIDA Y NAVEGACIÓN AL INDEX
+                                Toast.makeText(context, "¡Bienvenida de vuelta, $nombre!", Toast.LENGTH_SHORT).show()
+                                navController.navigate("index") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(context, "Error al guardar en Firestore: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                            }
+                    } else {
+                        Toast.makeText(context, "Fallo en Firebase: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
+                    }
+                }
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error al parsear credenciales: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+        }
+    }
+}
+

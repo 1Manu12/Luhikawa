@@ -1,5 +1,7 @@
 package com.example.luhikawa
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,29 +10,64 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Medication
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.PersonOutline
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import java.util.Calendar
+import com.google.firebase.firestore.FirebaseFirestore
+import android.widget.Toast
 
 val BgDark = Color(0xFF1A1717)
 val BgBeige = Color(0xFFC7AF93)
@@ -49,7 +86,8 @@ class MainActivityH : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = BgDarka
                 ) {
-                    RecordatorioScreen()
+                    val navController = rememberNavController()
+                    RegistroScreen(navController = navController)
                 }
             }
         }
@@ -57,12 +95,20 @@ class MainActivityH : ComponentActivity() {
 }
 
 @Composable
-fun RecordatorioScreen() {
+fun RecordatorioScreen(navController: NavController) {
     var reminderName by remember { mutableStateOf("") }
     var selectedIcon by remember { mutableStateOf(0) }
     var selectedImportance by remember { mutableStateOf("Alta") }
+
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
     var selectedDate by remember { mutableStateOf("15 Oct 2023") }
     var selectedTime by remember { mutableStateOf("16:00") }
+
+    var selectedCategory by remember { mutableStateOf("Todo") }
+    var selectedFrequency by remember { mutableStateOf("Todos los días") }
+
+    val db = FirebaseFirestore.getInstance()
 
     Column(
         modifier = Modifier
@@ -73,75 +119,150 @@ fun RecordatorioScreen() {
 
         Column(
             modifier = Modifier
-                .weight(1f)
+                .fillMaxSize()
                 .padding(horizontal = 24.dp)
-                .padding(top = 16.dp)
+                .padding(top = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            NuevoRecordatorioHeader()
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Detalles",
-                style = TextStyle(
-                    fontFamily = InriaSerif,
-                    fontSize = 26.sp,
-                    color = TextBeigea
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            InputLabel(text = "Nombre del recordatorio")
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextFieldCustom(
-                value = reminderName,
-                onValueChange = { reminderName = it },
-                placeholder = "Ej: Cita con el dentista"
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            InputLabel(text = "Ícono")
-            Spacer(modifier = Modifier.height(8.dp))
-            IconSelector(
-                selectedIndex = selectedIcon,
-                onIconSelected = { selectedIcon = it }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            InputLabel(text = "Importancia")
-            Spacer(modifier = Modifier.height(8.dp))
-            ImportanceSelector(
-                selectedOption = selectedImportance,
-                onOptionSelected = { selectedImportance = it }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            InputLabel(text = "Fecha y Hora")
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                DateTimeSelector(
-                    icon = Icons.Outlined.CalendarMonth,
-                    text = selectedDate,
-                    modifier = Modifier.weight(1f)
+                NuevoRecordatorioHeader()
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    text = "Detalles",
+                    style = TextStyle(
+                        fontFamily = InriaSerif,
+                        fontSize = 26.sp,
+                        color = TextBeigea
+                    )
                 )
-                DateTimeSelector(
-                    icon = Icons.Default.Schedule,
-                    text = selectedTime,
-                    modifier = Modifier.weight(1f)
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                InputLabel(text = "Nombre del recordatorio")
+                Spacer(modifier = Modifier.height(6.dp))
+                OutlinedTextFieldCustom(
+                    value = reminderName,
+                    onValueChange = { reminderName = it },
+                    placeholder = "Ej: Cita con el dentista"
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                InputLabel(text = "Ícono")
+                Spacer(modifier = Modifier.height(6.dp))
+                IconSelector(
+                    selectedIndex = selectedIcon,
+                    onIconSelected = { selectedIcon = it }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                InputLabel(text = "Importancia")
+                Spacer(modifier = Modifier.height(6.dp))
+                ImportanceSelector(
+                    selectedOption = selectedImportance,
+                    onOptionSelected = { selectedImportance = it }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                InputLabel(text = "Fecha y Hora")
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    DateTimeSelector(
+                        icon = Icons.Outlined.CalendarMonth,
+                        text = selectedDate,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                DatePickerDialog(
+                                    context,
+                                    { _, year, month, dayOfMonth ->
+                                        val months = arrayOf("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+                                        selectedDate = "$dayOfMonth ${months[month]} $year"
+                                    },
+                                    calendar.get(Calendar.YEAR),
+                                    calendar.get(Calendar.MONTH),
+                                    calendar.get(Calendar.DAY_OF_MONTH)
+                                ).show()
+                            }
+                    )
+
+                    DateTimeSelector(
+                        icon = Icons.Default.Schedule,
+                        text = selectedTime,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                TimePickerDialog(
+                                    context,
+                                    { _, hourOfDay, minute ->
+                                        selectedTime = String.format("%02d:%02d", hourOfDay, minute)
+                                    },
+                                    calendar.get(Calendar.HOUR_OF_DAY),
+                                    calendar.get(Calendar.MINUTE),
+                                    true
+                                ).show()
+                            }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+                InputLabel(text = "Clasificación")
+                Spacer(modifier = Modifier.height(6.dp))
+                IndexStyleCategorySelector(
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = { selectedCategory = it }
+                )
+
+                if (selectedCategory == "Hábitos") {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    InputLabel(text = "Frecuencia de repetición")
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FrequencySelector(
+                        selectedOption = selectedFrequency,
+                        onOptionSelected = { selectedFrequency = it }
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
             Button(
-                onClick = { },
+                onClick = {
+                    if (reminderName.isNotBlank()) {
+                        val taskMap = mutableMapOf<String, Any>(
+                            "title" to reminderName,
+                            "category" to if (selectedCategory == "Todo") "Tareas" else selectedCategory,
+                            "date" to selectedDate,
+                            "time" to selectedTime,
+                            "importance" to selectedImportance,
+                            "icon" to selectedIcon,
+                            "isCompleted" to false
+                        )
+
+                        if (selectedCategory == "Hábitos") {
+                            taskMap["frequency"] = selectedFrequency
+                        }
+
+                        db.collection("tasks")
+                            .add(taskMap)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "¡Guardado con éxito!", Toast.LENGTH_SHORT).show()
+                                navController.popBackStack()
+                            }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(context, "Error al guardar: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                            }
+                    } else {
+                        Toast.makeText(context, "Por favor escribe un nombre", Toast.LENGTH_SHORT).show()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -160,10 +281,53 @@ fun RecordatorioScreen() {
                     )
                 )
             }
-            Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+}
 
-        BottomNavBar()
+@Composable
+fun FrequencySelector(
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit
+) {
+    val options = listOf("Todos los días", "Día de por medio", "Cada dos semanas")
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                BorderStroke(1.dp, AccentBordera),
+                shape = RoundedCornerShape(12.dp)
+            )
+    ) {
+        options.forEach { text ->
+            val isSelected = text == selectedOption
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .background(
+                        if (isSelected) BgBeigea else Color.Transparent,
+                        shape = when (text) {
+                            "Todos los días" -> RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)
+                            "Cada dos semanas" -> RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
+                            else -> RoundedCornerShape(0.dp)
+                        }
+                    )
+                    .clickable { onOptionSelected(text) }
+                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = text,
+                    style = TextStyle(
+                        fontFamily = InriaSerif,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSelected) BgDarka else TextBeigea
+                    ),
+                    maxLines = 1
+                )
+            }
+        }
     }
 }
 
@@ -290,7 +454,7 @@ fun IconSelector(selectedIndex: Int, onIconSelected: (Int) -> Unit) {
             val isSelected = index == selectedIndex
             Box(
                 modifier = Modifier
-                    .size(55.dp)
+                    .size(50.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(if (isSelected) BgBeigea else Color.Transparent)
                     .border(
@@ -304,7 +468,7 @@ fun IconSelector(selectedIndex: Int, onIconSelected: (Int) -> Unit) {
                     imageVector = icon,
                     contentDescription = "Icono $index",
                     tint = if (isSelected) BgDarka else TextBeigea,
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(26.dp)
                 )
             }
         }
@@ -339,14 +503,14 @@ fun ImportanceSelector(
                         }
                     )
                     .clickable { onOptionSelected(text) }
-                    .padding(vertical = 12.dp),
+                    .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = text,
                     style = TextStyle(
                         fontFamily = InriaSerif,
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) BgDarka else TextBeigea
                     )
@@ -383,10 +547,51 @@ fun DateTimeSelector(
             text = text,
             style = TextStyle(
                 fontFamily = InriaSerif,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 color = TextBeigea
             )
         )
+    }
+}
+
+@Composable
+fun IndexStyleCategorySelector(
+    selectedCategory: String,
+    onCategorySelected: (String) -> Unit
+) {
+    val categories = listOf("Trabajo", "Estudio", "Hábitos", "Personal", "Lista de deseos", "Cumpleaños")
+
+    androidx.compose.foundation.lazy.LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        items(categories.size) { index ->
+            val category = categories[index]
+            val isSelected = category == selectedCategory
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (isSelected) BgBeigea else Color.Transparent)
+                    .border(
+                        BorderStroke(1.dp, AccentBordera),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                    .clickable { onCategorySelected(category) }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = category,
+                    style = TextStyle(
+                        fontFamily = InriaSerif,
+                        fontSize = 13.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSelected) BgDarka else TextBeigea
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -400,7 +605,7 @@ fun BottomNavBar() {
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BottomNavItem(icon = Icons.Default.CalendarMonth, contentDescription = "Calendario")
+        BottomNavItem(icon = Icons.Default.DateRange, contentDescription = "Calendario")
         BottomNavItem(icon = Icons.Outlined.Cloud, contentDescription = "Clima")
         Box(
             modifier = Modifier
@@ -414,8 +619,8 @@ fun BottomNavBar() {
                     .background(Color.White.copy(alpha = 0.1f), CircleShape)
             )
         }
-        BottomNavItem(icon = Icons.Default.Schedule, contentDescription = "Agenda")
-        BottomNavItem(icon = Icons.Outlined.PersonOutline, contentDescription = "Perfil")
+        BottomNavItem(icon = Icons.Default.CheckCircle, contentDescription = "Agenda")
+        BottomNavItem(icon = Icons.Outlined.Person, contentDescription = "Perfil")
     }
 }
 
