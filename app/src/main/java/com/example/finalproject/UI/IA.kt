@@ -1,4 +1,4 @@
-package com.example.finalproject.ui
+package com.example.finalproject.UI
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -17,12 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -36,11 +30,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.finalproject.R
 
 val BgDark3 = Color(0xFF1A1717)
 val BgBeige3 = Color(0xFFC7AF93)
@@ -178,7 +174,7 @@ fun AiScreen() {
                         )
                     )
                     Icon(
-                        imageVector = Icons.Default.Send,
+                        imageVector = ImageVector.vectorResource(R.drawable.send_24),
                         contentDescription = "Enviar",
                         tint = TextDark3,
                         modifier = Modifier.size(20.dp)
@@ -193,8 +189,8 @@ fun AiScreen() {
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                BottomNavItem(icon = Icons.Default.DateRange, label = "Hoy", isSelected = false)
-                BottomNavItem(icon = Icons.Default.Cloud, label = "Hábitos", isSelected = false)
+                BottomNavItem(icon = ImageVector.vectorResource(R.drawable.date_range_24), label = "Hábitos", isSelected = false)
+                BottomNavItem(icon = ImageVector.vectorResource(R.drawable.cloud_24), label = "Hábitos", isSelected = false)
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -218,8 +214,8 @@ fun AiScreen() {
                     )
                 }
 
-                BottomNavItem(icon = Icons.Default.Person, label = "Perfiles", isSelected = false)
-                BottomNavItem(icon = Icons.Default.CheckCircle, label = "Recordatorios", isSelected = false)
+                BottomNavItem(icon = ImageVector.vectorResource(R.drawable.person_24), label = "Perfiles", isSelected = false)
+                BottomNavItem(icon = ImageVector.vectorResource(R.drawable.check_circle_24), label = "Recordatorios", isSelected = false)
             }
         }
     }

@@ -1,35 +1,24 @@
-package com.example.luhikawa
+package com.example.finalproject.UI
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Cloud
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.finalproject.InriaSerif
+import com.example.finalproject.R
 
 class MainActivityTarea : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,7 +27,7 @@ class MainActivityTarea : ComponentActivity() {
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = BgDarka
+                    color = BgDark3
                 ) {
                     TareaScreen()
                 }
@@ -58,7 +47,7 @@ fun TareaScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgDarka)
+            .background(BgDark3)
     ) {
         HeaderSection()
 
@@ -72,7 +61,7 @@ fun TareaScreen() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(BgBeigea)
+                    .background(BgBeige3)
                     .padding(vertical = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -82,7 +71,7 @@ fun TareaScreen() {
                         fontFamily = InriaSerif,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextDarka
+                        color = TextDark3
                     )
                 )
             }
@@ -94,7 +83,7 @@ fun TareaScreen() {
                 style = TextStyle(
                     fontFamily = InriaSerif,
                     fontSize = 26.sp,
-                    color = TextBeigea
+                    color = TextBeige3
                 )
             )
 
@@ -136,12 +125,12 @@ fun TareaScreen() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 DateTimeSelector(
-                    icon = Icons.Outlined.CalendarMonth,
+                    icon = ImageVector.vectorResource(R.drawable.calendar_month_24),
                     text = selectedDate,
                     modifier = Modifier.weight(1f)
                 )
                 DateTimeSelector(
-                    icon = Icons.Default.Schedule,
+                    icon = ImageVector.vectorResource(R.drawable.schedule_24),
                     text = selectedTime,
                     modifier = Modifier.weight(1f)
                 )
@@ -155,8 +144,8 @@ fun TareaScreen() {
                     .fillMaxWidth()
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = BgBeigea,
-                    contentColor = TextDarka
+                    containerColor = BgBeige3,
+                    contentColor = TextDark3
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {

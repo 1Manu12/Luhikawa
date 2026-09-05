@@ -1,4 +1,4 @@
-package com.example.luhikawa
+package com.example.finalproject.UI
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,10 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,8 +18,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -31,6 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
+import com.example.finalproject.InriaSerif
+import com.example.finalproject.R
 
 class MainActivityRegistro : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +38,7 @@ class MainActivityRegistro : ComponentActivity() {
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = BgDarka
+                    color = BgDark3
                 ) {
                     RegistroScreen()
                 }
@@ -65,7 +63,7 @@ fun RegistroScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgDarka)
+            .background(BgDark3)
             .verticalScroll(scrollState)
             .padding(horizontal = 20.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -99,18 +97,18 @@ fun RegistroScreen() {
             onValueChange = { usuario = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Usuario", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Usuario", style = TextStyle(fontFamily = InriaSerif, color = TextBeige3.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeige3, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = AccentBorder3,
+                unfocusedBorderColor = AccentBorder3,
+                cursorColor = BgBeige3
             ),
             leadingIcon = {
-                Icon(Icons.Default.Person, contentDescription = "Icono Usuario", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(ImageVector.vectorResource(R.drawable.person_24), contentDescription = "Icono Usuario", tint = TextBeige3.copy(alpha = 0.7f))
             }
         )
 
@@ -121,18 +119,18 @@ fun RegistroScreen() {
             onValueChange = { usuario = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Nombre Completo", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Nombre Completo", style = TextStyle(fontFamily = InriaSerif, color = TextBeige3.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeige3, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = AccentBorder3,
+                unfocusedBorderColor = AccentBorder3,
+                cursorColor = BgBeige3
             ),
             leadingIcon = {
-                Icon(Icons.Default.Person, contentDescription = "Icono Usuario", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(ImageVector.vectorResource(R.drawable.person_24), contentDescription = "Icono Usuario", tint = TextBeige3.copy(alpha = 0.7f))
             }
         )
 
@@ -143,18 +141,18 @@ fun RegistroScreen() {
             onValueChange = { email = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Correo electrónico", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Correo electrónico", style = TextStyle(fontFamily = InriaSerif, color = TextBeige3.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeige3, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = AccentBorder3,
+                unfocusedBorderColor = AccentBorder3,
+                cursorColor = BgBeige3
             ),
             leadingIcon = {
-                Icon(Icons.Default.Email, contentDescription = "Icono Email", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(ImageVector.vectorResource(R.drawable.mail_24), contentDescription = "Icono Email", tint = TextBeige3.copy(alpha = 0.7f))
             }
         )
 
@@ -165,18 +163,18 @@ fun RegistroScreen() {
             onValueChange = { contrasena = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Contraseña", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Contraseña", style = TextStyle(fontFamily = InriaSerif, color = TextBeige3.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeige3, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = AccentBorder3,
+                unfocusedBorderColor = AccentBorder3,
+                cursorColor = BgBeige3
             ),
             leadingIcon = {
-                Icon(Icons.Default.Lock, contentDescription = "Icono Contraseña", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(ImageVector.vectorResource(R.drawable.lock_24), contentDescription = "Icono Contraseña", tint = TextBeige3.copy(alpha = 0.7f))
             }
         )
 
@@ -187,18 +185,18 @@ fun RegistroScreen() {
             onValueChange = { contrasena = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Comfirmar Contraseña", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Comfirmar Contraseña", style = TextStyle(fontFamily = InriaSerif, color = TextBeige3.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeige3, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = AccentBorder3,
+                unfocusedBorderColor = AccentBorder3,
+                cursorColor = BgBeige3
             ),
             leadingIcon = {
-                Icon(Icons.Default.Lock, contentDescription = "Icono Contraseña", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(ImageVector.vectorResource(R.drawable.lock_24), contentDescription = "Icono Contraseña", tint = TextBeige3.copy(alpha = 0.7f))
             }
         )
 
@@ -208,7 +206,7 @@ fun RegistroScreen() {
         Button(
             onClick = { },
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = BgBeigea, contentColor = TextDarka),
+            colors = ButtonDefaults.buttonColors(containerColor = BgBeige3, contentColor = TextDark3),
             shape = RoundedCornerShape(28.dp)
         ) {
             Text("Registrarse", style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, fontWeight = FontWeight.Bold))
@@ -218,7 +216,7 @@ fun RegistroScreen() {
 
         Text(
             text = "¿Ya tienes una cuenta?",
-            style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, color = TextBeigea.copy(alpha = 0.8f), textAlign = TextAlign.Center)
+            style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, color = TextBeige3.copy(alpha = 0.8f), textAlign = TextAlign.Center)
         )
 
         Spacer(modifier = Modifier.height(spacingXS))
@@ -226,7 +224,7 @@ fun RegistroScreen() {
         Text(
             text = "Inicia sesión",
             style = TextStyle(
-                fontFamily = InriaSerif, fontSize = 18.sp, color = TextBeigea,
+                fontFamily = InriaSerif, fontSize = 18.sp, color = TextBeige3,
                 textDecoration = TextDecoration.Underline, textAlign = TextAlign.Center
             ),
             modifier = Modifier.clickable { }

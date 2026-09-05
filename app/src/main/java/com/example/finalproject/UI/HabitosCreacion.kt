@@ -1,4 +1,4 @@
-package com.example.finalproject.ui
+package com.example.finalproject.UI
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,12 +11,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Cloud
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,19 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-val BgDark = Color(0xFF1A1717)
-val BgBeige = Color(0xFFC7AF93)
-val TextBeige = Color(0xFFC7AF93)
-val TextDark = Color(0xFF1A1717)
-val AccentBorder = Color(0xFFC7AF93)
-
-val CustomFontFamily = FontFamily.Serif
+import com.example.finalproject.InriaSerif
+import com.example.finalproject.R
 
 class MainActivityH : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +35,7 @@ class MainActivityH : ComponentActivity() {
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = BgDarka
+                    color = BgDark3
                 ) {
                     RecordatorioScreen()
                 }
@@ -67,7 +55,7 @@ fun RecordatorioScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgDarka)
+            .background(BgDark3)
     ) {
         HeaderSection()
 
@@ -86,7 +74,7 @@ fun RecordatorioScreen() {
                 style = TextStyle(
                     fontFamily = InriaSerif,
                     fontSize = 26.sp,
-                    color = TextBeigea
+                    color = TextBeige3
                 )
             )
 
@@ -127,12 +115,12 @@ fun RecordatorioScreen() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 DateTimeSelector(
-                    icon = Icons.Outlined.CalendarMonth,
+                    icon = ImageVector.vectorResource(R.drawable.calendar_month_24),
                     text = selectedDate,
                     modifier = Modifier.weight(1f)
                 )
                 DateTimeSelector(
-                    icon = Icons.Default.Schedule,
+                    icon = ImageVector.vectorResource(R.drawable.schedule_24),
                     text = selectedTime,
                     modifier = Modifier.weight(1f)
                 )
@@ -146,8 +134,8 @@ fun RecordatorioScreen() {
                     .fillMaxWidth()
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = BgBeigea,
-                    contentColor = TextDarka
+                    containerColor = BgBeige3,
+                    contentColor = TextDark3
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {
@@ -173,15 +161,15 @@ fun HeaderSection() {
         modifier = Modifier
             .fillMaxWidth()
             .height(65.dp)
-            .background(BgBeigea)
+            .background(BgBeige3)
             .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Default.Menu,
+            imageVector = ImageVector.vectorResource(R.drawable.menu_24),
             contentDescription = "Menú",
-            tint = TextDarka,
+            tint = TextDark3,
             modifier = Modifier.size(24.dp)
         )
 
@@ -202,7 +190,7 @@ fun NuevoRecordatorioHeader() {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(BgBeigea)
+            .background(BgBeige3)
             .padding(vertical = 16.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -212,7 +200,7 @@ fun NuevoRecordatorioHeader() {
                 fontFamily = InriaSerif,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextDarka
+                color = TextDark3
             )
         )
     }
@@ -225,7 +213,7 @@ fun InputLabel(text: String) {
         style = TextStyle(
             fontFamily = InriaSerif,
             fontSize = 16.sp,
-            color = TextBeigea.copy(alpha = 0.8f)
+            color = TextBeige3.copy(alpha = 0.8f)
         )
     )
 }
@@ -251,21 +239,21 @@ fun OutlinedTextFieldCustom(
         },
         textStyle = TextStyle(
             fontFamily = InriaSerif,
-            color = TextBeigea,
+            color = TextBeige3,
             fontSize = 18.sp
         ),
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = AccentBordera,
-            unfocusedBorderColor = AccentBordera,
-            cursorColor = BgBeigea
+            focusedBorderColor = AccentBorder3,
+            unfocusedBorderColor = AccentBorder3,
+            cursorColor = BgBeige3
         ),
         trailingIcon = {
             Icon(
-                imageVector = Icons.Default.Edit,
+                imageVector = ImageVector.vectorResource(R.drawable.edit_24),
                 contentDescription = "Editar",
-                tint = AccentBordera,
+                tint = AccentBorder3,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -275,11 +263,11 @@ fun OutlinedTextFieldCustom(
 @Composable
 fun IconSelector(selectedIndex: Int, onIconSelected: (Int) -> Unit) {
     val iconsList = listOf(
-        Icons.Outlined.Notifications,
-        Icons.Default.FitnessCenter,
-        Icons.Default.Medication,
-        Icons.Default.WaterDrop,
-        Icons.Default.DirectionsCar
+        ImageVector.vectorResource(R.drawable.notifications_24),
+        ImageVector.vectorResource(R.drawable.fitness_center_24),
+        ImageVector.vectorResource(R.drawable.medication_24),
+        ImageVector.vectorResource(R.drawable.water_drop_24),
+        ImageVector.vectorResource(R.drawable.directions_car_24)
     )
 
     Row(
@@ -292,9 +280,9 @@ fun IconSelector(selectedIndex: Int, onIconSelected: (Int) -> Unit) {
                 modifier = Modifier
                     .size(55.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) BgBeigea else Color.Transparent)
+                    .background(if (isSelected) BgBeige3 else Color.Transparent)
                     .border(
-                        BorderStroke(1.dp, AccentBordera),
+                        BorderStroke(1.dp, AccentBorder3),
                         shape = RoundedCornerShape(12.dp)
                     )
                     .clickable { onIconSelected(index) },
@@ -303,7 +291,7 @@ fun IconSelector(selectedIndex: Int, onIconSelected: (Int) -> Unit) {
                 Icon(
                     imageVector = icon,
                     contentDescription = "Icono $index",
-                    tint = if (isSelected) BgDarka else TextBeigea,
+                    tint = if (isSelected) BgDark3 else TextBeige3,
                     modifier = Modifier.size(30.dp)
                 )
             }
@@ -321,7 +309,7 @@ fun ImportanceSelector(
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                BorderStroke(1.dp, AccentBordera),
+                BorderStroke(1.dp, AccentBorder3),
                 shape = RoundedCornerShape(12.dp)
             )
     ) {
@@ -331,7 +319,7 @@ fun ImportanceSelector(
                 modifier = Modifier
                     .weight(1f)
                     .background(
-                        if (isSelected) BgBeigea else Color.Transparent,
+                        if (isSelected) BgBeige3 else Color.Transparent,
                         shape = when (text) {
                             "Baja" -> RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)
                             "Alta" -> RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
@@ -348,7 +336,7 @@ fun ImportanceSelector(
                         fontFamily = InriaSerif,
                         fontSize = 18.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) BgDarka else TextBeigea
+                        color = if (isSelected) BgDark3 else TextBeige3
                     )
                 )
             }
@@ -366,7 +354,7 @@ fun DateTimeSelector(
         modifier = modifier
             .height(50.dp)
             .border(
-                BorderStroke(1.dp, AccentBordera),
+                BorderStroke(1.dp, AccentBorder3),
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 12.dp),
@@ -375,7 +363,7 @@ fun DateTimeSelector(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = AccentBordera,
+            tint = AccentBorder3,
             modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -384,7 +372,7 @@ fun DateTimeSelector(
             style = TextStyle(
                 fontFamily = InriaSerif,
                 fontSize = 16.sp,
-                color = TextBeigea
+                color = TextBeige3
             )
         )
     }
@@ -395,13 +383,13 @@ fun BottomNavBar() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(BgDarka)
+            .background(BgDark3)
             .padding(vertical = 16.dp, horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BottomNavItem(icon = Icons.Default.CalendarMonth, contentDescription = "Calendario")
-        BottomNavItem(icon = Icons.Outlined.Cloud, contentDescription = "Clima")
+        BottomNavItem(icon = ImageVector.vectorResource(R.drawable.calendar_month_24), contentDescription = "Calendario")
+        BottomNavItem(icon = ImageVector.vectorResource(R.drawable.cloud_24), contentDescription = "Clima")
         Box(
             modifier = Modifier
                 .size(60.dp)
@@ -414,8 +402,8 @@ fun BottomNavBar() {
                     .background(Color.White.copy(alpha = 0.1f), CircleShape)
             )
         }
-        BottomNavItem(icon = Icons.Default.Schedule, contentDescription = "Agenda")
-        BottomNavItem(icon = Icons.Outlined.PersonOutline, contentDescription = "Perfil")
+        BottomNavItem(icon = ImageVector.vectorResource(R.drawable.check_circle_24), contentDescription = "Agenda")
+        BottomNavItem(icon = ImageVector.vectorResource(R.drawable.person_24), contentDescription = "Perfil")
     }
 }
 
