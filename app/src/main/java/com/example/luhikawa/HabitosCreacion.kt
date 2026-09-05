@@ -68,6 +68,7 @@ import androidx.navigation.compose.rememberNavController
 import java.util.Calendar
 import com.google.firebase.firestore.FirebaseFirestore
 import android.widget.Toast
+import androidx.compose.runtime.LaunchedEffect
 
 val BgDark = Color(0xFF1A1717)
 val BgBeige = Color(0xFFC7AF93)
@@ -95,7 +96,7 @@ class MainActivityH : ComponentActivity() {
 }
 
 @Composable
-fun RecordatorioScreen(navController: NavController) {
+fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
     var reminderName by remember { mutableStateOf("") }
     var selectedIcon by remember { mutableStateOf(0) }
     var selectedImportance by remember { mutableStateOf("Alta") }
@@ -105,10 +106,30 @@ fun RecordatorioScreen(navController: NavController) {
     var selectedDate by remember { mutableStateOf("15 Oct 2023") }
     var selectedTime by remember { mutableStateOf("16:00") }
 
-    var selectedCategory by remember { mutableStateOf("Todo") }
+    var selectedCategory by remember { mutableStateOf("Trabajo") }
     var selectedFrequency by remember { mutableStateOf("Todos los días") }
 
     val db = FirebaseFirestore.getInstance()
+
+    LaunchedEffect(taskId) {
+        if (!taskId.isNullOrEmpty()) {
+            db.collection("tasks").document(taskId).get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        reminderName = document.getString("title") ?: ""
+                        selectedCategory = document.getString("category") ?: "Trabajo"
+                        selectedDate = document.getString("date") ?: "15 Oct 2023"
+                        selectedTime = document.getString("time") ?: "16:00"
+                        selectedImportance = document.getString("importance") ?: "Alta"
+                        selectedIcon = (document.getLong("icon") ?: 0L).toInt()
+
+                        if (document.contains("frequency")) {
+                            selectedFrequency = document.getString("frequency") ?: "Todos los días"
+                        }
+                    }
+                }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -127,7 +148,8 @@ fun RecordatorioScreen(navController: NavController) {
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                NuevoRecordatorioHeader()
+                // 🏷️ Cambia el título dependiendo de si estamos editando o creando
+                NuevoRecordatorioHeader(isEditing = !taskId.isNullOrEmpty())
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -250,15 +272,29 @@ fun RecordatorioScreen(navController: NavController) {
                             taskMap["frequency"] = selectedFrequency
                         }
 
-                        db.collection("tasks")
-                            .add(taskMap)
-                            .addOnSuccessListener {
-                                Toast.makeText(context, "¡Guardado con éxito!", Toast.LENGTH_SHORT).show()
-                                navController.popBackStack()
-                            }
-                            .addOnFailureListener { e ->
-                                Toast.makeText(context, "Error al guardar: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                            }
+                        if (!taskId.isNullOrEmpty()) {
+                            // 🔄 Actualizamos la tarea existente en lugar de crear una nueva
+                            db.collection("tasks").document(taskId)
+                                .update(taskMap)
+                                .addOnSuccessListener {
+                                    Toast.makeText(context, "¡Actualizado con éxito!", Toast.LENGTH_SHORT).show()
+                                    navController.popBackStack()
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(context, "Error al actualizar: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                }
+                        } else {
+                            // ➕ Creamos una tarea nueva
+                            db.collection("tasks")
+                                .add(taskMap)
+                                .addOnSuccessListener {
+                                    Toast.makeText(context, "¡Guardado con éxito!", Toast.LENGTH_SHORT).show()
+                                    navController.popBackStack()
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(context, "Error al guardar: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                }
+                        }
                     } else {
                         Toast.makeText(context, "Por favor escribe un nombre", Toast.LENGTH_SHORT).show()
                     }
@@ -273,7 +309,7 @@ fun RecordatorioScreen(navController: NavController) {
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    text = "GUARDAR",
+                    text = if (!taskId.isNullOrEmpty()) "ACTUALIZAR" else "GUARDAR",
                     style = TextStyle(
                         fontFamily = InriaSerif,
                         fontSize = 18.sp,
@@ -282,6 +318,28 @@ fun RecordatorioScreen(navController: NavController) {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun NuevoRecordatorioHeader(isEditing: Boolean = false) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(BgBeigea)
+            .padding(vertical = 16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = if (isEditing) "EDITAR RECORDATORIO" else "NUEVO RECORDATORIO",
+            style = TextStyle(
+                fontFamily = InriaSerif,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextDarka
+            )
+        )
     }
 }
 
