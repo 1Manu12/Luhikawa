@@ -14,8 +14,8 @@ class Neuron() {
     }
 
     fun predict(data: Double):Double{
-        result = data * weight
-        return activation.digmoid(result)
+        result = (data * weight) + breach
+        return activation.sigmoid(result)
     }
 
     fun regression(error:Double) {
