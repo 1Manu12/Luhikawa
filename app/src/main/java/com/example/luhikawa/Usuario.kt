@@ -2,9 +2,12 @@ package com.example.luhikawa
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -28,6 +31,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
@@ -37,11 +42,13 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material.icons.outlined.Assignment
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -60,7 +67,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -76,12 +82,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
-import androidx.compose.material.icons.filled.Add
-import android.widget.Toast
-import androidx.compose.material.icons.outlined.Notifications
+import com.google.firebase.firestore.SetOptions
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import androidx.compose.ui.graphics.asImageBitmap
 
 
 class MainActivityPerfil : ComponentActivity() {
@@ -132,9 +139,12 @@ class MainActivityPerfil : ComponentActivity() {
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilScreen(navController: NavController) {
+    var fotoPerfilBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showAccountDialog by remember { mutableStateOf(false) }
     var selectedAccount by remember { mutableStateOf("") }
     var cuentasGuardadas by remember { mutableStateOf<List<String>>(emptyList()) }
+    var fotoPerfilUrl by remember { mutableStateOf("") }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
 
     var showDatosPersonales by remember { mutableStateOf(false) }
     var showHistorial by remember { mutableStateOf(false) }
@@ -145,12 +155,27 @@ fun PerfilScreen(navController: NavController) {
     var notificacionesActivas by remember { mutableStateOf(true) }
     var temaOscuro by remember { mutableStateOf(false) }
 
-    // Variables para el horario de notificaciones
     val context = LocalContext.current
     var horaNotificacion by remember { mutableStateOf(8) }
     var minutoNotificacion by remember { mutableStateOf(30) }
 
     val db = FirebaseFirestore.getInstance()
+
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            db.collection("users")
+                .document(userId)
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        fotoPerfilUrl = document.getString("fotoPerfil") ?: ""
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("PerfilScreen", "Error al cargar foto de perfil: ${e.message}")
+                }
+        }
+    }
 
     LaunchedEffect(Unit) {
         db.collection("users")
@@ -169,31 +194,30 @@ fun PerfilScreen(navController: NavController) {
             }
     }
 
-    var fotoPerfilUrl by remember { mutableStateOf("") }
-    var fotoPerfilBitmap by remember { mutableStateOf<Bitmap?>(null) }
-
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            subirFotoPerfil(uri, context) { url ->
-                fotoPerfilUrl = url
+            guardarFotoPerfilBase64(uri, context, selectedAccount) { bitmap: Bitmap, base64: String ->
+                fotoPerfilBitmap = bitmap
             }
         }
     }
 
-    LaunchedEffect(Unit) {
-        db.collection("tasks")
-            .whereEqualTo("completed", true)
-            .get()
-            .addOnSuccessListener { result ->
-                tareasCompletadas = result.documents.mapNotNull { doc ->
-                    doc.getString("title")
+    LaunchedEffect(selectedAccount) {
+        if (selectedAccount.isNotEmpty()) {
+            db.collection("users")
+                .whereEqualTo("nombreCompleto", selectedAccount)
+                .get()
+                .addOnSuccessListener { result ->
+                    if (!result.isEmpty) {
+                        val base64 = result.documents[0].getString("fotoBase64")
+                        if (!base64.isNullOrEmpty()) {
+                            fotoPerfilBitmap = base64ToBitmap(base64)
+                        }
+                    }
                 }
-            }
-            .addOnFailureListener { e ->
-                Log.e("PerfilScreen", "Error historial: ${e.message}")
-            }
+        }
     }
 
     val timePickerDialog = android.app.TimePickerDialog(
@@ -282,7 +306,7 @@ fun PerfilScreen(navController: NavController) {
                             bitmap = fotoPerfilBitmap!!.asImageBitmap(),
                             contentDescription = "Foto de perfil",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                            contentScale = ContentScale.Crop // Asegura que la imagen llene el círculo
                         )
                     } else {
                         Icon(
@@ -334,14 +358,14 @@ fun PerfilScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             PerfilOptionButton(
-                text = "Horario de notificación".format(horaNotificacion, minutoNotificacion),
+                text = "Notificaciones ".format(horaNotificacion, minutoNotificacion),
                 icon = Icons.Outlined.Notifications,
-                onClick = { timePickerDialog.show() },
-
+                onClick = { timePickerDialog.show() }
             )
         }
     }
 
+    // Diálogos AlertDialog...
     if (showAccountDialog) {
         AlertDialog(
             onDismissRequest = { showAccountDialog = false },
@@ -601,32 +625,186 @@ fun PerfilScreen(navController: NavController) {
             }
         )
     }
+    if (showAccountDialog) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+
+        AlertDialog(
+            onDismissRequest = { showAccountDialog = false },
+            containerColor = BgDarka,
+            title = {
+                Text(
+                    text = "Gestión de cuenta",
+                    fontFamily = InriaSerif,
+                    fontWeight = FontWeight.Bold,
+                    color = TextBeigea
+                )
+            },
+            text = {
+                Column {
+                    if (cuentasGuardadas.isNotEmpty()) {
+                        Text(
+                            text = "Cuentas en este dispositivo:",
+                            fontFamily = InriaSerif,
+                            fontSize = 14.sp,
+                            color = TextBeigea.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        cuentasGuardadas.forEach { cuenta ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedAccount = cuenta
+                                        showAccountDialog = false
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = if (cuenta == selectedAccount) BgBeigea else TextBeigea.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = cuenta,
+                                    fontFamily = InriaSerif,
+                                    fontSize = 16.sp,
+                                    color = if (cuenta == selectedAccount) BgBeigea else TextBeigea
+                                )
+                            }
+                        }
+                        Divider(color = TextBeigea.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
+                    }
+
+                    if (currentUser != null) {
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    FirebaseAuth.getInstance().signOut()
+                                    showAccountDialog = false
+                                    navController.navigate("login") { // Reemplaza por tu ruta de Login
+                                        popUpTo(0)
+                                    }
+                                }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = "Cerrar sesión",
+                                tint = Color(0xFFFF6B6B),
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Cerrar sesión",
+                                fontFamily = InriaSerif,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFF6B6B)
+                            )
+                        }
+                    } else {
+                        // Si no hay sesión activa
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showAccountDialog = false
+                                    navController.navigate("login") // Reemplaza por tu ruta de Login/Registro
+                                }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Login,
+                                contentDescription = "Iniciar sesión",
+                                tint = BgBeigea,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Iniciar sesión / Registrarse",
+                                fontFamily = InriaSerif,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = BgBeigea
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAccountDialog = false }) {
+                    Text("Cerrar", fontFamily = InriaSerif, color = TextBeigea)
+                }
+            }
+        )
+    }
 }
+fun guardarFotoPerfilBase64(
+    uri: Uri,
+    context: Context,
+    selectedAccount: String,
+    onBitmapCargado: (Bitmap, String) -> Unit
+) {
+    try {
+        val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+        val bitmapOriginal = BitmapFactory.decodeStream(inputStream)
 
-fun subirFotoPerfil(uri: Uri, context: Context, onSuccess: (String) -> Unit) {
-    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-    val storageRef = FirebaseStorage.getInstance().reference
-        .child("fotos_perfil/$userId.jpg")
+        if (bitmapOriginal != null) {
+            // Redimensionar imagen para optimizar espacio en Firestore
+            val maxDimension = 300
+            val ratio = Math.min(
+                maxDimension.toFloat() / bitmapOriginal.width,
+                maxDimension.toFloat() / bitmapOriginal.height
+            )
+            val width = Math.round(ratio * bitmapOriginal.width)
+            val height = Math.round(ratio * bitmapOriginal.height)
+            val bitmapReducido = Bitmap.createScaledBitmap(bitmapOriginal, width, height, true)
 
-    storageRef.putFile(uri)
-        .addOnSuccessListener {
-            storageRef.downloadUrl.addOnSuccessListener { url ->
-                FirebaseFirestore.getInstance()
-                    .collection("users")
-                    .document(userId)
-                    .update("fotoPerfil", url.toString())
-                    .addOnSuccessListener {
-                        onSuccess(url.toString())
+            // Convertir Bitmap a Base64
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            bitmapReducido.compress(Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream)
+            val byteArray = byteArrayOutputStream.toByteArray()
+            val base64String = Base64.encodeToString(byteArray, Base64.DEFAULT)
+
+            // Guardar en Firestore
+            val db = FirebaseFirestore.getInstance()
+            if (selectedAccount.isNotEmpty()) {
+                db.collection("users")
+                    .whereEqualTo("nombreCompleto", selectedAccount)
+                    .get()
+                    .addOnSuccessListener { querySnapshot ->
+                        if (!querySnapshot.isEmpty) {
+                            val docId = querySnapshot.documents[0].id
+                            db.collection("users").document(docId)
+                                .set(mapOf("fotoBase64" to base64String), SetOptions.merge())
+                                .addOnSuccessListener {
+                                    Toast.makeText(context, "Foto actualizada", Toast.LENGTH_SHORT).show()
+                                    onBitmapCargado(bitmapReducido, base64String)
+                                }
+                        }
                     }
             }
         }
-        .addOnFailureListener { e ->
-            Log.e("PerfilScreen", "Error al subir foto: ${e.message}")
-        }
+    } catch (e: Exception) {
+        Log.e("PerfilScreen", "Error: ${e.message}")
+    }
 }
-
-
-
+fun base64ToBitmap(base64Str: String): Bitmap? {
+    return try {
+        val decodedBytes = Base64.decode(base64Str, Base64.DEFAULT)
+        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+    } catch (e: Exception) {
+        null
+    }
+}
 
 @Composable
 fun PerfilOptionButton(text: String, icon: ImageVector, onClick: () -> Unit) {
