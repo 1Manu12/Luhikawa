@@ -93,6 +93,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.material3.Scaffold
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.text.style.TextOverflow
+import android.os.Build
+import android.content.pm.PackageManager
 
 
 val BackgroundColor = Color(0xFF1A1717)
@@ -164,6 +166,13 @@ class MainActivity : ComponentActivity() {
 
                             composable(route = "registro") {
                                 RegistroScreen(navController = navController)
+                            }
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+                                    PackageManager.PERMISSION_GRANTED) {
+
+                                    requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
+                                }
                             }
                         }
                     }

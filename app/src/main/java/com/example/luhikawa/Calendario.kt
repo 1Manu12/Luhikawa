@@ -151,7 +151,6 @@ fun CalendarScreen(navController: NavController) {
 
     LaunchedEffect(Unit) { cargarTareas() }
 
-    // Filtrar solo tareas PENDIENTES (no completadas)
     val tareasPendientes = remember(tareas) {
         tareas.filter { tarea ->
             val completada = tarea["completed"] as? Boolean ?: false
@@ -196,10 +195,8 @@ fun CalendarScreen(navController: NavController) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Cabecera que ocupa todo el ancho de la pantalla
             RectanguloConImagen2()
 
-            // Contenido con padding horizontal
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -80,6 +80,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import androidx.compose.material.icons.filled.Add
+import android.widget.Toast
+import androidx.compose.material.icons.outlined.Notifications
+
 
 class MainActivityPerfil : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -142,6 +145,11 @@ fun PerfilScreen(navController: NavController) {
     var notificacionesActivas by remember { mutableStateOf(true) }
     var temaOscuro by remember { mutableStateOf(false) }
 
+    // Variables para el horario de notificaciones
+    val context = LocalContext.current
+    var horaNotificacion by remember { mutableStateOf(8) }
+    var minutoNotificacion by remember { mutableStateOf(30) }
+
     val db = FirebaseFirestore.getInstance()
 
     LaunchedEffect(Unit) {
@@ -160,9 +168,9 @@ fun PerfilScreen(navController: NavController) {
                 Log.e("PerfilScreen", "Error al cargar cuentas: ${e.message}")
             }
     }
+
     var fotoPerfilUrl by remember { mutableStateOf("") }
     var fotoPerfilBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    val context = LocalContext.current
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -173,7 +181,6 @@ fun PerfilScreen(navController: NavController) {
             }
         }
     }
-
 
     LaunchedEffect(Unit) {
         db.collection("tasks")
@@ -189,6 +196,31 @@ fun PerfilScreen(navController: NavController) {
             }
     }
 
+    val timePickerDialog = android.app.TimePickerDialog(
+        context,
+        R.style.CustomTimePickerTheme,
+        { _, hourOfDay, minute ->
+            horaNotificacion = hourOfDay
+            minutoNotificacion = minute
+
+            programarNotificacionLocal(
+                context = context,
+                hora = hourOfDay,
+                minuto = minute,
+                titulo = "¡Miau! Hora de revisar 🐾",
+                mensaje = "Tienes tareas pendientes en tu agenda."
+            )
+
+            Toast.makeText(
+                context,
+                "Notificación programada a las %02d:%02d".format(hourOfDay, minute),
+                Toast.LENGTH_SHORT
+            ).show()
+        },
+        horaNotificacion,
+        minutoNotificacion,
+        true
+    )
 
     Column(
         modifier = Modifier
@@ -261,7 +293,6 @@ fun PerfilScreen(navController: NavController) {
                         )
                     }
                 }
-
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -298,6 +329,15 @@ fun PerfilScreen(navController: NavController) {
                 text = "Preferencias",
                 icon = Icons.Outlined.FavoriteBorder,
                 onClick = { showPreferencias = true }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            PerfilOptionButton(
+                text = "Horario de notificación".format(horaNotificacion, minutoNotificacion),
+                icon = Icons.Outlined.Notifications,
+                onClick = { timePickerDialog.show() },
+
             )
         }
     }
@@ -440,7 +480,6 @@ fun PerfilScreen(navController: NavController) {
             }
         )
     }
-
 
     if (showHistorial) {
         AlertDialog(

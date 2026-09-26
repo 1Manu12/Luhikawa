@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="CustomTimePickerTheme" parent="android:Theme.Material.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackground">#191816</item>
+
+        <item name="android:colorPrimary">#C7AF93</item>
+        <item name="android:colorPrimaryDark">#191816</item>
+
+        <item name="android:colorAccent">#C7AF93</item>
+
+        <item name="android:textColorPrimary">#C7AF93</item>
+        <item name="android:textColorSecondary">#C7AF93</item>
+    </style>
 
     <style name="Theme.FinalProject" parent="android:Theme.Material.Light.NoActionBar" />
     <style name="Theme.Luhikawa" parent="android:Theme.Material.Light.NoActionBar" />

@@ -74,6 +74,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.firestore.FirebaseFirestore
+import android.app.TimePickerDialog
+import androidx.compose.runtime.DisposableEffect
+import java.util.Calendar
 
 
 val BgDark = Color(0xFF1A1717)
@@ -349,6 +352,7 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
 
         if (showDatePicker) {
             val datePickerState = rememberDatePickerState()
+
             DatePickerDialog(
                 onDismissRequest = { showDatePicker = false },
                 confirmButton = {
@@ -356,7 +360,7 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                         onClick = {
                             datePickerState.selectedDateMillis?.let { millis ->
                                 val fecha = java.time.Instant.ofEpochMilli(millis)
-                                    .atZone(java.time.ZoneOffset.UTC)   // <-- cambio clave
+                                    .atZone(java.time.ZoneOffset.UTC)
                                     .toLocalDate()
                                 val year = fecha.year
                                 val month = fecha.monthValue
@@ -370,125 +374,69 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                             showDatePicker = false
                         }
                     ) {
-                        Text("Aceptar", fontFamily = InriaSerif)
-                    }
-                },
-
-                        dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) {
-                        Text("Cancelar", fontFamily = InriaSerif)
-                    }
-                },
-                colors = DatePickerDefaults.colors(containerColor = BackgroundColor)
-            ) {
-                DatePicker(state = datePickerState)
-            }
-        }
-
-        if (showTimePicker) {
-            var selectedHour by remember { mutableStateOf(16) }
-            var selectedMinute by remember { mutableStateOf(0) }
-
-            AlertDialog(
-                onDismissRequest = { showTimePicker = false },
-                containerColor = BgDarka,
-                title = {
-                    Text(
-                        text = "Seleccionar Hora",
-                        fontFamily = InriaSerif,
-                        color = TextBeigea,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = String.format("%02d", if (selectedHour == 0) 23 else selectedHour - 1),
-                                color = Color.Gray.copy(alpha = 0.4f),
-                                fontSize = 22.sp,
-                                modifier = Modifier
-                                    .clickable { selectedHour = if (selectedHour == 0) 23 else selectedHour - 1 }
-                                    .padding(8.dp)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = String.format("%02d", selectedHour),
-                                    color = Color.White,
-                                    fontSize = 40.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(text = "h", color = Color.Gray, fontSize = 14.sp)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = String.format("%02d", if (selectedHour == 23) 0 else selectedHour + 1),
-                                color = Color.Gray.copy(alpha = 0.4f),
-                                fontSize = 22.sp,
-                                modifier = Modifier
-                                    .clickable { selectedHour = if (selectedHour == 23) 0 else selectedHour + 1 }
-                                    .padding(8.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(text = ":", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = String.format("%02d", if (selectedMinute == 0) 59 else selectedMinute - 1),
-                                color = Color.Gray.copy(alpha = 0.4f),
-                                fontSize = 22.sp,
-                                modifier = Modifier
-                                    .clickable { selectedMinute = if (selectedMinute == 0) 59 else selectedMinute - 1 }
-                                    .padding(8.dp)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = String.format("%02d", selectedMinute),
-                                    color = Color.White,
-                                    fontSize = 40.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(text = "m", color = Color.Gray, fontSize = 14.sp)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = String.format("%02d", if (selectedMinute == 59) 0 else selectedMinute + 1),
-                                color = Color.Gray.copy(alpha = 0.4f),
-                                fontSize = 22.sp,
-                                modifier = Modifier
-                                    .clickable { selectedMinute = if (selectedMinute == 59) 0 else selectedMinute + 1 }
-                                    .padding(8.dp)
-                            )
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            selectedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
-                            showTimePicker = false
-                        }
-                    ) {
                         Text("Aceptar", fontFamily = InriaSerif, color = BgBeigea, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showTimePicker = false }) {
-                        Text("Cancelar", fontFamily = InriaSerif, color = Color.Gray)
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text("Cancelar", fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f))
                     }
+                },
+                colors = DatePickerDefaults.colors(
+                    containerColor = BgDarka
+                )
+            ) {
+                DatePicker(
+                    state = datePickerState,
+                    colors = DatePickerDefaults.colors(
+                        containerColor = BgDarka,
+                        titleContentColor = TextBeigea,
+                        headlineContentColor = BgBeigea,
+                        weekdayContentColor = TextBeigea.copy(alpha = 0.6f),
+                        subheadContentColor = TextBeigea,
+                        yearContentColor = TextBeigea,
+                        currentYearContentColor = BgBeigea,
+                        selectedYearContentColor = BgDarka,
+                        selectedYearContainerColor = BgBeigea,
+                        dayContentColor = TextBeigea,
+                        disabledDayContentColor = TextBeigea.copy(alpha = 0.2f),
+                        selectedDayContentColor = BgDarka,
+                        selectedDayContainerColor = BgBeigea,
+                        todayContentColor = BgBeigea,
+                        todayDateBorderColor = BgBeigea,
+                        navigationContentColor = BgBeigea
+                    )
+                )
+            }
+        }
+
+        if (showTimePicker) {
+            val context = LocalContext.current
+            val calendar = Calendar.getInstance()
+
+            DisposableEffect(Unit) {
+                val timePickerDialog = TimePickerDialog(
+                    context,
+                    R.style.CustomTimePickerTheme,
+                    { _, hourOfDay, minute ->
+                        selectedTime = String.format("%02d:%02d", hourOfDay, minute)
+                        showTimePicker = false
+                    },
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    true
+                )
+
+                timePickerDialog.setOnCancelListener {
+                    showTimePicker = false
                 }
-            )
+
+                timePickerDialog.show()
+
+                onDispose {
+                    timePickerDialog.dismiss()
+                }
+            }
         }
     }
 }
