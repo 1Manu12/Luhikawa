@@ -293,12 +293,6 @@ fun LoginScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(spacingL))
 
-//        Image(
-//            painter = painterResource(id = R.drawable.gato2),
-//            contentDescription = "Gatito durmiendo",
-//            modifier = Modifier.fillMaxWidth(),
-//            contentScale = ContentScale.FillWidth
-//        )
     }
 }
 
