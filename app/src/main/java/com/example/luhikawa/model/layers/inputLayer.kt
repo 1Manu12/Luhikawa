@@ -1,4 +1,4 @@
-package com.example.finalproject.model.layers
+package com.example.luhikawa.model.layers
 
 class InputLayer {
 

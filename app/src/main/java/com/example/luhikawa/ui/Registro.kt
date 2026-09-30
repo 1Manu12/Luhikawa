@@ -1,8 +1,9 @@
-package com.example.luhikawa
+package com.example.luhikawa.ui
 
-import android.R.attr.clickable
-import android.content.Context
 import android.os.Bundle
+import android.util.Base64
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -10,58 +11,48 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import android.widget.Toast
-import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.example.luhikawa.ui.theme.*
+import com.example.luhikawa.R
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.GetCredentialResponse
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.launch
 import java.security.SecureRandom
-import android.util.Base64
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.credentials.CustomCredential
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
+import com.example.luhikawa.domain.services.AuthService
+import com.example.luhikawa.ui.theme.AccentColor32
 
 
 class MainActivityRegistro : ComponentActivity() {
@@ -90,12 +81,12 @@ fun RegistroScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
     var confirmarContrasena by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val credentialManager = CredentialManager.create(context)
-
 
     val auth = Firebase.auth
     val db = Firebase.firestore
@@ -109,7 +100,7 @@ fun RegistroScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgDarka)
+            .background(BackgroundColor)
             .verticalScroll(scrollState)
             .padding(horizontal = 20.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -133,7 +124,7 @@ fun RegistroScreen(navController: NavController) {
                 .fillMaxWidth(0.75f)
                 .wrapContentHeight(),
             contentScale = ContentScale.FillWidth,
-            colorFilter = ColorFilter.tint(Color(0xFFC7AF93))
+            colorFilter = ColorFilter.tint(AccentColor32)
         )
 
         Spacer(modifier = Modifier.height(spacingXL))
@@ -149,9 +140,9 @@ fun RegistroScreen(navController: NavController) {
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = AccentColor32,
+                unfocusedBorderColor = AccentColor32,
+                cursorColor = AccentColor32
             ),
             leadingIcon = {
                 Icon(Icons.Default.Person, contentDescription = "Icono Usuario", tint = TextBeigea.copy(alpha = 0.7f))
@@ -171,9 +162,9 @@ fun RegistroScreen(navController: NavController) {
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = AccentColor32,
+                unfocusedBorderColor = AccentColor32,
+                cursorColor = AccentColor32
             ),
             leadingIcon = {
                 Icon(Icons.Default.Person, contentDescription = "Icono Nombre", tint = TextBeigea.copy(alpha = 0.7f))
@@ -193,9 +184,9 @@ fun RegistroScreen(navController: NavController) {
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = AccentColor32,
+                unfocusedBorderColor = AccentColor32,
+                cursorColor = AccentColor32
             ),
             leadingIcon = {
                 Icon(Icons.Default.Email, contentDescription = "Icono Email", tint = TextBeigea.copy(alpha = 0.7f))
@@ -203,8 +194,6 @@ fun RegistroScreen(navController: NavController) {
         )
 
         Spacer(modifier = Modifier.height(spacingM))
-
-        var passwordVisible by remember { mutableStateOf(false) }
 
         OutlinedTextField(
             value = contrasena,
@@ -217,9 +206,9 @@ fun RegistroScreen(navController: NavController) {
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = AccentColor32,
+                unfocusedBorderColor = AccentColor32,
+                cursorColor = AccentColor32
             ),
             leadingIcon = {
                 Icon(Icons.Default.Lock, contentDescription = "Icono Contraseña", tint = TextBeigea.copy(alpha = 0.7f))
@@ -247,17 +236,15 @@ fun RegistroScreen(navController: NavController) {
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = AccentColor32,
+                unfocusedBorderColor = AccentColor32,
+                cursorColor = AccentColor32
             ),
             leadingIcon = {
                 Icon(Icons.Default.Lock, contentDescription = "Icono Confirmar Contraseña", tint = TextBeigea.copy(alpha = 0.7f))
             },
-
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-
             trailingIcon = {
                 val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -294,9 +281,7 @@ fun RegistroScreen(navController: NavController) {
                             db.collection("users").document(userId)
                                 .set(userMap)
                                 .addOnSuccessListener {
-
                                     Toast.makeText(context, "¡Bienvenida a Luhikawa, $usuario!", Toast.LENGTH_SHORT).show()
-
                                     navController.navigate("greeting") {
                                         popUpTo("registro") { inclusive = true }
                                     }
@@ -306,17 +291,13 @@ fun RegistroScreen(navController: NavController) {
                                 }
 
                         } else {
-                            android.util.Log.e(
-                                "RegistroAuth",
-                                "Fallo en Auth: ${task.exception?.localizedMessage}",
-                                task.exception
-                            )
+                            Log.e("RegistroAuth", "Fallo en Auth: ${task.exception?.localizedMessage}", task.exception)
                             Toast.makeText(context, "Error de registro: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
                         }
                     }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = BgBeigea, contentColor = TextDarka),
+            colors = ButtonDefaults.buttonColors(containerColor = AccentColor32, contentColor = BackgroundColor),
             shape = RoundedCornerShape(28.dp)
         ) {
             Text("Registrarse", style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, fontWeight = FontWeight.Bold))
@@ -331,7 +312,7 @@ fun RegistroScreen(navController: NavController) {
             Box(
                 modifier = Modifier
                     .size(50.dp)
-                    .background(BgDarka, shape = CircleShape)
+                    .background(BackgroundColor, shape = CircleShape)
                     .clickable {
                         coroutineScope.launch {
                             try {
@@ -355,7 +336,17 @@ fun RegistroScreen(navController: NavController) {
                                     request = request
                                 )
 
-                                handleGoogleCredentialResponse(result, auth, db, context, navController)
+                                AuthService.handleGoogleCredentialResponse(
+                                    result = result,
+                                    auth = auth,
+                                    db = db,
+                                    context = context,
+                                    onSuccess = {
+                                        navController.navigate("greeting") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    }
+                                )
 
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Error de Google: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
@@ -397,7 +388,7 @@ fun RegistroScreen(navController: NavController) {
     }
 }
 
-private fun handleGoogleCredentialResponse(
+/*private fun handleGoogleCredentialResponse(
     result: GetCredentialResponse,
     auth: FirebaseAuth,
     db: FirebaseFirestore,
@@ -432,7 +423,6 @@ private fun handleGoogleCredentialResponse(
                         db.collection("users").document(userId)
                             .set(userMap, SetOptions.merge())
                             .addOnSuccessListener {
-                                // MENSAJE DE BIENVENIDA Y NAVEGACIÓN AL INDEX
                                 Toast.makeText(context, "¡Bienvenida de vuelta, $nombre!", Toast.LENGTH_SHORT).show()
                                 navController.navigate("greeting") {
                                     popUpTo("login") { inclusive = true }
@@ -449,4 +439,4 @@ private fun handleGoogleCredentialResponse(
             Toast.makeText(context, "Error al parsear credenciales: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
         }
     }
-}
+}*/

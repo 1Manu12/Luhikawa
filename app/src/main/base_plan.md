@@ -10,9 +10,9 @@ Este plan detalla los cambios necesarios para crear una interfaz de usuario func
 - Reemplazar `TODO()` por la inicialización de la clase `Activation` para evitar cierres inesperados.
 
 #### [MODIFY] [network.kt](file:///D:/Programacion/Kotlin/app/src/main/java/com/example/finalproject/model/neurons/network.kt)
-- Modificar la función `network` para que devuelva la lista de resultados (`List<Double>`), permitiendo que la UI muestre los datos procesados.
+- Modificar la función `network` para que devuelva la lista de resultados (`List<Double>`), permitiendo que la ui muestre los datos procesados.
 
-### Interfaz de Usuario (UI)
+### Interfaz de Usuario (ui)
 
 #### [MODIFY] [MainActivity.kt](file:///D:/Programacion/Kotlin/app/src/main/java/com/example/finalproject/MainActivity.kt)
 - Implementar una pantalla con:

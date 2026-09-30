@@ -1,4 +1,4 @@
-package com.example.finalproject.domain
+package com.example.luhikawa.domain
 
 import java.time.LocalDate
 

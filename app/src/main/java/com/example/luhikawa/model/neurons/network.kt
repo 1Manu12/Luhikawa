@@ -1,8 +1,8 @@
-package com.example.finalproject.model.neurons
+package com.example.luhikawa.model.neurons
 
-import com.example.finalproject.model.layers.InputLayer
-import com.example.finalproject.model.layers.processingLayer
-import com.example.finalproject.model.layers.exitLayer
+import com.example.luhikawa.model.layers.InputLayer
+import com.example.luhikawa.model.layers.processingLayer
+import com.example.luhikawa.model.layers.exitLayer
 
 class network {
     private val neuronsNetwork = mutableListOf<Neuron>()

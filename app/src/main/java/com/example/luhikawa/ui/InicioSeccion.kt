@@ -1,4 +1,4 @@
-package com.example.luhikawa
+package com.example.luhikawa.ui
 
 import android.os.Bundle
 import android.util.Base64
@@ -9,67 +9,70 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
-import androidx.credentials.GetCredentialResponse
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.luhikawa.ui.theme.*
+import com.example.luhikawa.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.firebase.auth.GoogleAuthProvider
-import kotlinx.coroutines.launch
-import java.security.SecureRandom
-import android.content.Context
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
-
-
-val BgDarka = Color(0xFF1A1717)
-val BgBeigea = Color(0xFFC7AF93)
-val TextBeigea = Color(0xFFC7AF93)
-val TextDarka = Color(0xFF1A1717)
-val AccentBordera = Color(0xFFC7AF93)
-
-val TextBeigdark = Color(0xFFC7AF93)
-
-val InriaSerife = FontFamily(
-    Font(R.font.inriaserif_regular)
-)
+import kotlinx.coroutines.launch
+import java.security.SecureRandom
+import com.example.luhikawa.domain.services.AuthService
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 
 class MainActivityLogin : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,12 +85,28 @@ class MainActivityLogin : ComponentActivity() {
                     color = BgDarka
                 ) {
                     val navController = rememberNavController()
-                    LoginScreen(navController = navController)
+
+                    NavHost(
+                        navController = navController,
+                        startDestination = "login"
+                    ) {
+                        composable("login") {
+                            LoginScreen(navController = navController)
+                        }
+                        composable("greeting") {
+                            Greeting(navController = navController)
+                        }
+
+                        composable("registro") {
+                            RegistroScreen(navController = navController)
+                        }
+                    }
+
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -200,7 +219,6 @@ fun LoginScreen(navController: NavController) {
                     return@Button
                 }
 
-                // Intentar iniciar sesión con Firebase (asumiendo que 'usuario' es el email)
                 auth.signInWithEmailAndPassword(usuario, contrasena)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
@@ -253,7 +271,17 @@ fun LoginScreen(navController: NavController) {
                                     request = request
                                 )
 
-                                handleGoogleCredentialResponse(result, auth, db, context, navController)
+                                AuthService.handleGoogleCredentialResponse(
+                                    result = result,
+                                    auth = auth,
+                                    db = db,
+                                    context = context,
+                                    onSuccess = {
+                                        navController.navigate("greeting") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    }
+                                )
 
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Error de Google: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
@@ -295,58 +323,3 @@ fun LoginScreen(navController: NavController) {
 
     }
 }
-
-private fun handleGoogleCredentialResponse(
-    result: GetCredentialResponse,
-    auth: FirebaseAuth,
-    db: FirebaseFirestore,
-    context: Context,
-    navController: NavController
-) {
-    val credential = result.credential
-    if (credential is CustomCredential &&
-        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-    ) {
-        try {
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-            val googleIdToken = googleIdTokenCredential.idToken
-
-            val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
-
-            auth.signInWithCredential(firebaseCredential)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val firebaseUser = auth.currentUser
-                        val userId = firebaseUser?.uid ?: ""
-                        val email = firebaseUser?.email ?: ""
-                        val nombre = firebaseUser?.displayName ?: "Usuario Google"
-
-                        val userMap = hashMapOf(
-                            "uid" to userId,
-                            "usuario" to nombre,
-                            "nombreCompleto" to nombre,
-                            "email" to email
-                        )
-
-                        db.collection("users").document(userId)
-                            .set(userMap, SetOptions.merge())
-                            .addOnSuccessListener {
-                                // MENSAJE DE BIENVENIDA Y NAVEGACIÓN AL INDEX
-                                Toast.makeText(context, "¡Bienvenida de vuelta, $nombre!", Toast.LENGTH_SHORT).show()
-                                navController.navigate("greeting") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            }
-                            .addOnFailureListener { e ->
-                                Toast.makeText(context, "Error al guardar en Firestore: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                            }
-                    } else {
-                        Toast.makeText(context, "Fallo en Firebase: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
-                    }
-                }
-        } catch (e: Exception) {
-            Toast.makeText(context, "Error al parsear credenciales: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-        }
-    }
-}
-

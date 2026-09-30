@@ -1,4 +1,4 @@
-package com.example.finalproject.domain
+package com.example.luhikawa.domain
 
 class User (name:String,
             lastName:String,

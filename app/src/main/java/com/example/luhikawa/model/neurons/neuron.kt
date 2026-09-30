@@ -1,5 +1,5 @@
-package com.example.finalproject.model.neurons
-import com.example.finalproject.model.activation.Activation
+package com.example.luhikawa.model.neurons
+import com.example.luhikawa.model.activation.Activation
 
 class Neuron() {
     private var weight = 0.5

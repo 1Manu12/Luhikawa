@@ -1,4 +1,4 @@
-package com.example.finalproject.model.activation
+package com.example.luhikawa.model.activation
 
 import kotlin.math.exp
 class Activation {
