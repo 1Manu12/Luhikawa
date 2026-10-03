@@ -35,8 +35,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,11 +47,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.luhikawa.data.TaskRepository
+import com.example.luhikawa.ui.HomeComponents.RectanguloConImagen
 import com.example.luhikawa.ui.theme.InriaSerif
 import com.example.luhikawa.ui.theme.luhikawaTheme
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
-
 
 class MainActivityCalendar : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,7 +73,6 @@ class MainActivityCalendar : ComponentActivity() {
                         composable(route = "calendario") {
                             CalendarScreen(navController = navController)
                         }
-
 
                         composable(route = "perfil") {
                             PerfilScreen(navController = navController)
@@ -97,10 +98,13 @@ class MainActivityCalendar : ComponentActivity() {
     }
 }
 
-
 @Composable
 fun CalendarScreen(navController: NavController) {
-    val db = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
+    val db = remember { FirebaseFirestore.getInstance() }
+    val auth = remember { FirebaseAuth.getInstance() }
+    val taskRepository = remember { TaskRepository() }
+
     var tareas by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
     var fechaSeleccionada by remember { mutableStateOf<LocalDate?>(null) }
 
@@ -108,16 +112,27 @@ fun CalendarScreen(navController: NavController) {
     var anio by remember { mutableStateOf(hoy.year) }
     var mes by remember { mutableStateOf(hoy.monthValue) }
 
+    // Carga tareas filtrando únicamente por el UID del usuario en sesión
     val cargarTareas = {
-        db.collection("tasks").get()
-            .addOnSuccessListener { result ->
-                tareas = result.documents.mapNotNull { doc ->
-                    doc.data?.let { it + ("taskId" to doc.id) }
+        val uid = taskRepository.getUserId(context)
+        if (!uid.isNullOrEmpty()) {
+            db.collection("tasks")
+                .whereEqualTo("userId", uid)
+                .get()
+                .addOnSuccessListener { result ->
+                    tareas = result.documents.mapNotNull { doc ->
+                        doc.data?.let { it + ("taskId" to doc.id) }
+                    }
                 }
-            }
+                .addOnFailureListener {
+                    tareas = emptyList()
+                }
+        } else {
+            tareas = emptyList()
+        }
     }
 
-    LaunchedEffect(Unit) { cargarTareas() }
+    LaunchedEffect(auth.currentUser?.uid) { cargarTareas() }
 
     val tareasPendientes = remember(tareas) {
         tareas.filter { tarea ->
@@ -164,7 +179,7 @@ fun CalendarScreen(navController: NavController) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            RectanguloConImagen2()
+            RectanguloConImagen()
 
             Column(
                 modifier = Modifier
@@ -261,17 +276,13 @@ fun CalendarScreen(navController: NavController) {
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (dia != null) {
+                                    val fechaActual = LocalDate.of(anio, mes, dia)
                                     Text(
                                         text = dia.toString(),
-                                        color = if (colorParaFecha(
-                                                LocalDate.of(
-                                                    anio,
-                                                    mes,
-                                                    dia
-                                                )
-                                            ) != null
-                                        )
-                                            MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground,
+                                        color = if (colorParaFecha(fechaActual) != null)
+                                            MaterialTheme.colorScheme.onPrimary
+                                        else
+                                            MaterialTheme.colorScheme.onBackground,
                                         fontFamily = InriaSerif,
                                         fontSize = 15.sp
                                     )
@@ -317,7 +328,7 @@ fun CalendarScreen(navController: NavController) {
                 } else {
                     items(tareasDelDia.size) { index ->
                         val tarea = tareasDelDia[index]
-                        val titulo = tarea["title"] as? String ?: "Sin título"
+                        val titulo = tarea["title"] as? String ?: tarea["titulo"] as? String ?: "Sin título"
                         val fechaLegible = tarea["date"] as? String ?: ""
                         val horaFormateada = tarea["time"] as? String ?: ""
                         val importante = tarea["important"] as? Boolean == true
@@ -345,25 +356,25 @@ fun CalendarScreen(navController: NavController) {
                                 iconIndex = iconIndex,
                                 onCircleClick = {
                                     if (id != null) {
-                                        db.collection("tasks").document(id)
-                                            .update("completed", true)
-                                            .addOnSuccessListener { cargarTareas() }
+                                        taskRepository.markTaskAsCompleted(id, true) {
+                                            cargarTareas()
+                                        }
                                     }
                                 },
                                 onImportanteClick = {
                                     if (id != null) {
-                                        db.collection("tasks").document(id)
-                                            .update("important", !importante)
-                                            .addOnSuccessListener { cargarTareas() }
+                                        taskRepository.toggleTaskImportance(id, importante) {
+                                            cargarTareas()
+                                        }
                                     }
                                 },
                                 onFechaClick = {},
                                 onBasuraClick = {},
                                 onEliminar = {
                                     if (id != null) {
-                                        db.collection("tasks").document(id)
-                                            .delete()
-                                            .addOnSuccessListener { cargarTareas() }
+                                        taskRepository.deleteTask(id) {
+                                            cargarTareas()
+                                        }
                                     }
                                 },
                                 onClick = {}

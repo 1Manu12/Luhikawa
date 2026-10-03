@@ -44,7 +44,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -63,6 +62,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -72,7 +72,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -99,7 +98,9 @@ import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
 import com.example.luhikawa.R
-import com.example.luhikawa.data.*
+import com.example.luhikawa.data.AccountManager
+import com.example.luhikawa.data.StoredAccount
+import com.example.luhikawa.data.UserRepository
 import com.example.luhikawa.ui.HomeComponents.HeaderSection
 import com.example.luhikawa.ui.HomeComponents.ParteAbajo
 import com.example.luhikawa.ui.components.SeccionCambiarTema
@@ -107,33 +108,47 @@ import com.example.luhikawa.ui.theme.InriaSerif
 import com.example.luhikawa.ui.theme.ThemeViewModel
 import com.example.luhikawa.ui.theme.luhikawaTheme
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import java.io.File
-import com.example.luhikawa.ui.HomeComponents.*
 
 class MainActivityPerfil : FragmentActivity() {
 
-    private val themeViewModel: ThemeViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         val auth = FirebaseAuth.getInstance()
-        val currentUser = auth.currentUser
-        val rutaInicial = if (currentUser != null) "greeting" else "login"
+        val rutaInicial = if (auth.currentUser != null) "greeting" else "login"
 
         setContent {
             val navController = rememberNavController()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
+            val context = LocalContext.current
+            val accountManager = remember { AccountManager(context) }
 
-            LaunchedEffect(currentRoute) {
-                val userId = auth.currentUser?.uid ?: "guest"
-                themeViewModel.setUser(userId)
+            var currentUsuarioId by remember {
+                mutableStateOf(auth.currentUser?.uid ?: accountManager.getCurrentAccountUid() ?: "guest")
             }
 
-            val currentTheme by themeViewModel.selectedTheme.collectAsState()
+            DisposableEffect(auth) {
+                val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+                    val newUid = firebaseAuth.currentUser?.uid ?: accountManager.getCurrentAccountUid() ?: "guest"
+                    currentUsuarioId = newUid
+                }
+                auth.addAuthStateListener(authStateListener)
+                onDispose {
+                    auth.removeAuthStateListener(authStateListener)
+                }
+            }
 
-            luhikawaTheme(appTheme = currentTheme) {
+            val themeViewModel: ThemeViewModel = viewModel(key = currentUsuarioId)
+
+            LaunchedEffect(currentUsuarioId) {
+                themeViewModel.setUser(currentUsuarioId)
+            }
+
+            val currentThemeColor by themeViewModel.appThemeColor.collectAsState()
+
+            luhikawaTheme(appTheme = currentThemeColor) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -542,7 +557,7 @@ fun PerfilScreen(
         }
     }
 
- //Datos personales
+    //Datos personales
     if (showDatosPersonales) {
         AlertDialog(
             onDismissRequest = { showDatosPersonales = false },

@@ -25,7 +25,7 @@ fun SeccionCambiarTema(
     themeViewModel: ThemeViewModel
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    val currentTheme by themeViewModel.selectedTheme.collectAsState()
+    val currentTheme by themeViewModel.appThemeColor.collectAsState()
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -112,10 +112,7 @@ fun SeccionCambiarTema(
                                     )
                                     RadioButton(
                                         selected = (theme == currentTheme),
-                                        onClick = {
-                                            themeViewModel.setTheme(theme)
-                                            showDialog = false
-                                        }
+                                        onClick = null // Se delega el evento al Row para evitar doble clic
                                     )
                                 }
                             }

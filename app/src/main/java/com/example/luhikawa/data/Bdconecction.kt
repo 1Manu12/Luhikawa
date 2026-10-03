@@ -17,12 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,32 +25,34 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import com.google.firebase.Firebase
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.firestore
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
+// Repositorio de Tareas
 class TaskRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
 
+    // Retorna estrictamente el UID del usuario en sesión activa
     fun getUserId(context: Context? = null): String? {
         val authUid = auth.currentUser?.uid
         if (!authUid.isNullOrEmpty()) return authUid
 
-        return context?.let { AccountManager(it).getCurrentAccountUid() }
+        val savedUid = context?.let { AccountManager(it).getCurrentAccountUid() }
+        return if (!savedUid.isNullOrEmpty()) savedUid else null
     }
 
     fun getTasksQuery(categoriaSeleccionada: String, context: Context? = null): Query {
-        val uid = getUserId(context) ?: return db.collection("tasks").whereEqualTo("userId", "NO_USER")
+        val uid = getUserId(context) ?: "NO_USER_LOGGED_IN"
 
+        // Consulta estricta filtrada por el UID único del usuario
         var query: Query = db.collection("tasks").whereEqualTo("userId", uid)
 
         if (categoriaSeleccionada != "Todas") {
@@ -82,7 +79,7 @@ class TaskRepository(
         onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
-        val uid = (taskMap["userId"] as? String) ?: getUserId(context)
+        val uid = getUserId(context)
 
         if (uid.isNullOrEmpty()) {
             onFailure(Exception("Usuario no autenticado"))
@@ -90,7 +87,7 @@ class TaskRepository(
         }
 
         val mutableTaskMap = taskMap.toMutableMap()
-        mutableTaskMap["userId"] = uid
+        mutableTaskMap["userId"] = uid // Vinculación garantizada al UID
 
         db.collection("tasks")
             .add(mutableTaskMap)
@@ -140,8 +137,10 @@ class UserRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
+    // Estandarizado a la colección "usuarios" (la misma que usas en Auth y Theme)
     fun getUserProfileUrl(userId: String, onSuccess: (String) -> Unit) {
-        db.collection("users").document(userId).get()
+        if (userId.isBlank()) return
+        db.collection("usuarios").document(userId).get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
                     onSuccess(document.getString("fotoPerfil") ?: "")
@@ -150,7 +149,7 @@ class UserRepository(
     }
 
     fun getAllUsersNames(onSuccess: (List<String>) -> Unit) {
-        db.collection("users").get()
+        db.collection("usuarios").get()
             .addOnSuccessListener { result ->
                 val nombres = result.documents.mapNotNull { doc ->
                     doc.getString("displayName") ?: doc.getString("nombreCompleto")
@@ -159,38 +158,19 @@ class UserRepository(
             }
     }
 
-    fun getUserPhotoBase64(identifier: String, onSuccess: (String?) -> Unit) {
-        if (identifier.isEmpty()) {
+    // Consulta aislada estrictamente por el UID del usuario
+    fun getUserPhotoBase64(userId: String, onSuccess: (String?) -> Unit) {
+        if (userId.isBlank()) {
             onSuccess(null)
             return
         }
 
-        db.collection("users").document(identifier).get()
+        db.collection("usuarios").document(userId).get()
             .addOnSuccessListener { doc ->
                 if (doc.exists() && doc.contains("fotoBase64")) {
                     onSuccess(doc.getString("fotoBase64"))
                 } else {
-                    db.collection("users")
-                        .whereEqualTo("displayName", identifier)
-                        .get()
-                        .addOnSuccessListener { result ->
-                            if (!result.isEmpty) {
-                                onSuccess(result.documents[0].getString("fotoBase64"))
-                            } else {
-                                db.collection("users")
-                                    .whereEqualTo("nombreCompleto", identifier)
-                                    .get()
-                                    .addOnSuccessListener { fallbackRes ->
-                                        if (!fallbackRes.isEmpty) {
-                                            onSuccess(fallbackRes.documents[0].getString("fotoBase64"))
-                                        } else {
-                                            onSuccess(null)
-                                        }
-                                    }
-                                    .addOnFailureListener { onSuccess(null) }
-                            }
-                        }
-                        .addOnFailureListener { onSuccess(null) }
+                    onSuccess(null)
                 }
             }
             .addOnFailureListener {
@@ -201,10 +181,10 @@ class UserRepository(
     fun guardarFotoPerfilBase64(
         uri: Uri,
         context: Context,
-        identifier: String,
+        userId: String,
         onSuccess: (Bitmap, String) -> Unit
     ) {
-        if (identifier.isEmpty()) return
+        if (userId.isBlank()) return
 
         try {
             val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
@@ -225,25 +205,10 @@ class UserRepository(
                 val byteArray = byteArrayOutputStream.toByteArray()
                 val base64String = Base64.encodeToString(byteArray, Base64.DEFAULT)
 
-                val userRef = db.collection("users").document(identifier)
-                userRef.get().addOnSuccessListener { doc ->
-                    if (doc.exists()) {
-                        userRef.set(mapOf("fotoBase64" to base64String), SetOptions.merge())
-                            .addOnSuccessListener { onSuccess(bitmapReducido, base64String) }
-                    } else {
-                        db.collection("users")
-                            .whereEqualTo("displayName", identifier)
-                            .get()
-                            .addOnSuccessListener { querySnapshot ->
-                                if (!querySnapshot.isEmpty) {
-                                    val docId = querySnapshot.documents[0].id
-                                    db.collection("users").document(docId)
-                                        .set(mapOf("fotoBase64" to base64String), SetOptions.merge())
-                                        .addOnSuccessListener { onSuccess(bitmapReducido, base64String) }
-                                }
-                            }
-                    }
-                }
+                // Guardar directamente bajo el nodo único del UID
+                db.collection("usuarios").document(userId)
+                    .set(mapOf("fotoBase64" to base64String), SetOptions.merge())
+                    .addOnSuccessListener { onSuccess(bitmapReducido, base64String) }
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -265,18 +230,11 @@ class UserRepository(
             "photoBase64" to null
         )
 
-        db.collection("users").document(userId)
-            .update(updates)
-            .addOnSuccessListener {
-                onExito()
-            }
-            .addOnFailureListener { e ->
-                db.collection("users").document(userId)
-                    .set(updates, SetOptions.merge())
-                    .addOnSuccessListener { onExito() }
-                    .addOnFailureListener { err ->
-                        onError(err.localizedMessage ?: "Error al quitar la foto")
-                    }
+        db.collection("usuarios").document(userId)
+            .set(updates, SetOptions.merge())
+            .addOnSuccessListener { onExito() }
+            .addOnFailureListener { err ->
+                onError(err.localizedMessage ?: "Error al quitar la foto")
             }
     }
 
@@ -302,13 +260,12 @@ class UserRepository(
             firebaseUser.updateProfile(profileUpdates)
         }
 
-        // Guarda tanto displayName como nombreCompleto para mantener sincronizada la BD
         val datosActualizados = mapOf(
             "displayName" to nuevoNombre,
             "nombreCompleto" to nuevoNombre
         )
 
-        db.collection("users").document(targetUid)
+        db.collection("usuarios").document(targetUid)
             .set(datosActualizados, SetOptions.merge())
             .addOnSuccessListener {
                 accountManager?.updateAccountData(targetUid, nuevoNombre, firebaseUser?.email ?: "")
@@ -330,14 +287,12 @@ class UserRepository(
     ) {
         val authUser = FirebaseAuth.getInstance().currentUser
 
-        // 1. Actualización en Firestore
-        db.collection("users").document(targetUid)
+        db.collection("usuarios").document(targetUid)
             .set(mapOf("email" to nuevoEmail), SetOptions.merge())
             .addOnSuccessListener {
                 val currentName = firebaseUserDisplayName(targetUid)
                 accountManager.updateAccountData(targetUid, currentName, nuevoEmail)
 
-                // 2. Actualización en Firebase Authentication
                 if (authUser != null && authUser.uid == targetUid) {
                     authUser.verifyBeforeUpdateEmail(nuevoEmail)
                         .addOnSuccessListener {
@@ -349,9 +304,8 @@ class UserRepository(
                                 .addOnSuccessListener {
                                     onSuccess()
                                 }
-                                .addOnFailureListener { e ->
-                                    // Si Firebase Auth requiere reciente autenticación, Firestore ya se actualizó
-                                    Toast.makeText(context, "Correo actualizado en la base de datos. Para la sesión principal, vuelve a iniciar sesión.", Toast.LENGTH_LONG).show()
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Correo actualizado en la base de datos.", Toast.LENGTH_LONG).show()
                                     onSuccess()
                                 }
                         }
@@ -414,18 +368,20 @@ class UserRepository(
 
 @Composable
 fun ProfileAvatar(
-    nombreUsuario: String,
+    userId: String, // Se debe recibir el UID único del usuario, no su nombre de usuario
     modifier: Modifier = Modifier,
     repository: UserRepository = remember { UserRepository() },
     onClick: () -> Unit = {}
 ) {
     var base64String by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(nombreUsuario) {
-        if (nombreUsuario.isNotEmpty()) {
-            repository.getUserPhotoBase64(nombreUsuario) { photoBase64 ->
+    LaunchedEffect(userId) {
+        if (userId.isNotEmpty()) {
+            repository.getUserPhotoBase64(userId) { photoBase64 ->
                 base64String = photoBase64
             }
+        } else {
+            base64String = null
         }
     }
 

@@ -5,16 +5,13 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.example.luhikawa.ui.HomeComponents.AppThemeColor
 
-// Enumeración con los temas anteriores y los 5 nuevos
 enum class AppTheme(val displayName: String) {
     BEIGE("Beige (Predeterminado)"),
     DORADO("Dorado / Latón"),
@@ -31,6 +28,65 @@ enum class AppTheme(val displayName: String) {
     CHAMPANA_CLARO("Champaña Claro"),
     GRIS_TAUPE("Gris Taupe / Lino"),
     SYSTEM("Predeterminado del Sistema")
+}
+
+// Función helper para construir esquemas homogéneos con el color acento seleccionado
+private fun buildColorScheme(accentColor: Color): ColorScheme {
+    return darkColorScheme(
+        primary = accentColor,
+        onPrimary = Color.Black,
+        secondary = accentColor,
+        tertiary = accentColor,
+        background = BackgroundColor, // Mantiene el fondo oscuro base (#1E1E1E)
+        onBackground = accentColor,   // Los textos principales adoptan el color del tema
+        surface = SurfaceDark,        // Las tarjetas mantienen el contenedor oscuro (#2B2B36)
+        onSurface = accentColor       // El contenido sobre las tarjetas adopta el color acento
+    )
+}
+
+@Composable
+fun luhikawaTheme(
+    appTheme: AppTheme = AppTheme.BEIGE,
+    content: @Composable () -> Unit
+) {
+    val systemIsDark = isSystemInDarkTheme()
+
+    val colorScheme: ColorScheme = when (appTheme) {
+        AppTheme.BEIGE -> buildColorScheme(AccentColor32)
+        AppTheme.DORADO -> buildColorScheme(AccentDorado)
+        AppTheme.MARRON -> buildColorScheme(AccentMarron)
+        AppTheme.BLANCO -> buildColorScheme(AccentBlanco)
+        AppTheme.VERDE_ESMERALDA -> buildColorScheme(AccentVerdeEsmeralda)
+        AppTheme.VERDE_AMARILLITO -> buildColorScheme(AccentVerdeAmarillito)
+        AppTheme.AZUL_MARINO -> buildColorScheme(AccentAzulMarino)
+        AppTheme.VINO_TINTO -> buildColorScheme(AccentVinoTinto)
+        AppTheme.GRIS_TITANIO -> buildColorScheme(AccentGrisTitanio)
+        AppTheme.GRIS_HIELO -> buildColorScheme(AccentGrisHielo)
+        AppTheme.PLOMO_CLARO -> buildColorScheme(AccentPlomoClaro)
+        AppTheme.BLANCO_HUESO -> buildColorScheme(AccentBlancoHueso)
+        AppTheme.CHAMPANA_CLARO -> buildColorScheme(AccentChampanaClaro)
+        AppTheme.GRIS_TAUPE -> buildColorScheme(AccentGrisTaupe)
+        AppTheme.SYSTEM -> if (systemIsDark) buildColorScheme(AccentColor32) else buildColorScheme(AccentBlanco)
+    }
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
+
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = false
+                isAppearanceLightNavigationBars = false
+            }
+        }
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        content = content
+    )
 }
 
 // 1. Esquema Beige
@@ -172,83 +228,3 @@ private val GrisTaupeColorScheme = darkColorScheme(
     surface = SurfaceGrisTaupe,
     onSurface = TextGrisTaupe
 )
-
-@Composable
-fun luhikawaTheme(
-    appTheme: AppTheme = AppTheme.BEIGE,
-    content: @Composable () -> Unit
-) {
-    val systemIsDark = isSystemInDarkTheme()
-
-    val colorScheme: ColorScheme = when (appTheme) {
-        AppTheme.BEIGE -> BeigeColorScheme
-        AppTheme.DORADO -> DoradoColorScheme
-        AppTheme.MARRON -> MarronColorScheme
-        AppTheme.BLANCO -> BlancoColorScheme
-        AppTheme.VERDE_ESMERALDA -> VerdeEsmeraldaColorScheme
-        AppTheme.VERDE_AMARILLITO -> VerdeAmarillitoColorScheme
-        AppTheme.AZUL_MARINO -> AzulMarinoColorScheme
-        AppTheme.VINO_TINTO -> VinoTintoColorScheme
-        AppTheme.GRIS_TITANIO -> GrisTitanioColorScheme
-        AppTheme.GRIS_HIELO -> GrisHieloColorScheme
-        AppTheme.PLOMO_CLARO -> PlomoClaroColorScheme
-        AppTheme.BLANCO_HUESO -> BlancoHuesoColorScheme
-        AppTheme.CHAMPANA_CLARO -> ChampanaClaroColorScheme
-        AppTheme.GRIS_TAUPE -> GrisTaupeColorScheme
-        AppTheme.SYSTEM -> if (systemIsDark) BeigeColorScheme else BlancoColorScheme
-    }
-
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            window.navigationBarColor = colorScheme.background.toArgb()
-
-            WindowCompat.getInsetsController(window, view).apply {
-                isAppearanceLightStatusBars = false
-                isAppearanceLightNavigationBars = false
-            }
-        }
-    }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content
-    )
-}
-
-fun String.toColor(): Color {
-    val colorInt = android.graphics.Color.parseColor(this.replace("0xFF", "#"))
-    return Color(colorInt.toLong() and 0xFFFFFFFFL)
-}
-
-@Composable
-fun MiAppTheme(
-    selectedTheme: AppThemeColor = AppThemeColor.BEIGE,
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
-    val primaryColor = selectedTheme.hex.toColor()
-
-    val colors = if (darkTheme) {
-        darkColorScheme(
-            primary = primaryColor,
-            background = Color(0xFF1E1E1E),
-            surface = Color(0xFF1E1E1E),
-            onPrimary = Color.Black
-        )
-    } else {
-        lightColorScheme(
-            primary = primaryColor,
-            background = Color(0xFFF5F5F5),
-            surface = Color(0xFFFFFFFF),
-            onPrimary = Color.White
-        )
-    }
-
-    MaterialTheme(
-        colorScheme = colors,
-        content = content
-    )
-}
