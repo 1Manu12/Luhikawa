@@ -4,13 +4,13 @@
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:colorBackground">#191816</item>
 
-        <item name="android:colorPrimary">#C7AF93</item>
+        <item name="android:colorPrimary">#FFFFFF</item>
         <item name="android:colorPrimaryDark">#191816</item>
 
-        <item name="android:colorAccent">#C7AF93</item>
+        <item name="android:colorAccent">#FFFFFF</item>
 
-        <item name="android:textColorPrimary">#C7AF93</item>
-        <item name="android:textColorSecondary">#C7AF93</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#FFFFFF</item>
     </style>
 
     <style name="Theme.FinalProject" parent="android:Theme.Material.NoActionBar">

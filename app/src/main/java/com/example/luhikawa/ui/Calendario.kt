@@ -55,6 +55,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
 
+
 class MainActivityCalendar : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,7 +113,6 @@ fun CalendarScreen(navController: NavController) {
     var anio by remember { mutableStateOf(hoy.year) }
     var mes by remember { mutableStateOf(hoy.monthValue) }
 
-    // Carga tareas filtrando únicamente por el UID del usuario en sesión
     val cargarTareas = {
         val uid = taskRepository.getUserId(context)
         if (!uid.isNullOrEmpty()) {
@@ -171,217 +171,220 @@ fun CalendarScreen(navController: NavController) {
     val celdas = List(offset) { null } + (1..diasEnMes).map { it }
     val celdasCompletas = celdas + List((7 - (celdas.size % 7)) % 7) { null }
 
+    val tareasDelDia = fechaSeleccionada?.let { tareasPorFecha[it] } ?: emptyList()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Column(
+        // Todo el contenido está dentro de un LazyColumn para permitir desplazamiento vertical completo
+        LazyColumn(
             modifier = Modifier.fillMaxSize()
         ) {
-            RectanguloConImagen()
+            item {
+                RectanguloConImagen()
+            }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Selector de mes
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
                 ) {
-                    Icon(
-                        Icons.Default.KeyboardArrowLeft,
-                        contentDescription = "Mes anterior",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.clickable {
-                            if (mes == 1) {
-                                mes = 12
-                                anio -= 1
-                            } else {
-                                mes -= 1
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Selector de mes
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.KeyboardArrowLeft,
+                            contentDescription = "Mes anterior",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.clickable {
+                                if (mes == 1) {
+                                    mes = 12
+                                    anio -= 1
+                                } else {
+                                    mes -= 1
+                                }
                             }
-                        }
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        "$mesNombre $anio",
-                        style = TextStyle(
-                            fontFamily = InriaSerif,
-                            fontSize = 22.sp,
-                            color = MaterialTheme.colorScheme.onBackground
                         )
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Icon(
-                        Icons.Default.KeyboardArrowRight,
-                        contentDescription = "Mes siguiente",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.clickable {
-                            if (mes == 12) {
-                                mes = 1
-                                anio += 1
-                            } else {
-                                mes += 1
-                            }
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Días de la semana
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    listOf("D", "L", "M", "M", "J", "V", "S").forEach { d ->
+                        Spacer(modifier = Modifier.width(16.dp))
                         Text(
-                            text = d,
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                            fontFamily = InriaSerif
+                            "$mesNombre $anio",
+                            style = TextStyle(
+                                fontFamily = InriaSerif,
+                                fontSize = 22.sp,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Icon(
+                            Icons.Default.KeyboardArrowRight,
+                            contentDescription = "Mes siguiente",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.clickable {
+                                if (mes == 12) {
+                                    mes = 1
+                                    anio += 1
+                                } else {
+                                    mes += 1
+                                }
+                            }
                         )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                // Cuadrícula del mes
-                celdasCompletas.chunked(7).forEach { semana ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 2.dp)
-                    ) {
-                        semana.forEach { dia ->
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .aspectRatio(1f)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (dia != null) {
-                                            val fecha = LocalDate.of(anio, mes, dia)
-                                            colorParaFecha(fecha) ?: Color.Transparent
-                                        } else Color.Transparent
-                                    )
-                                    .clickable(enabled = dia != null) {
-                                        if (dia != null) {
-                                            fechaSeleccionada = LocalDate.of(anio, mes, dia)
-                                        }
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (dia != null) {
-                                    val fechaActual = LocalDate.of(anio, mes, dia)
-                                    Text(
-                                        text = dia.toString(),
-                                        color = if (colorParaFecha(fechaActual) != null)
-                                            MaterialTheme.colorScheme.onPrimary
-                                        else
-                                            MaterialTheme.colorScheme.onBackground,
-                                        fontFamily = InriaSerif,
-                                        fontSize = 15.sp
-                                    )
+                    // Días de la semana
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        listOf("D", "L", "M", "M", "J", "V", "S").forEach { d ->
+                            Text(
+                                text = d,
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                fontFamily = InriaSerif
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Cuadrícula del mes
+                    celdasCompletas.chunked(7).forEach { semana ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp)
+                        ) {
+                            semana.forEach { dia ->
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (dia != null) {
+                                                val fecha = LocalDate.of(anio, mes, dia)
+                                                colorParaFecha(fecha) ?: Color.Transparent
+                                            } else Color.Transparent
+                                        )
+                                        .clickable(enabled = dia != null) {
+                                            if (dia != null) {
+                                                fechaSeleccionada = LocalDate.of(anio, mes, dia)
+                                            }
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (dia != null) {
+                                        val fechaActual = LocalDate.of(anio, mes, dia)
+                                        Text(
+                                            text = dia.toString(),
+                                            color = if (colorParaFecha(fechaActual) != null)
+                                                MaterialTheme.colorScheme.onPrimary
+                                            else
+                                                MaterialTheme.colorScheme.onBackground,
+                                            fontFamily = InriaSerif,
+                                            fontSize = 15.sp
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    "Tareas asignadas",
-                    style = TextStyle(
-                        fontFamily = InriaSerif,
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold
+                    Text(
+                        "Tareas asignadas",
+                        style = TextStyle(
+                            fontFamily = InriaSerif,
+                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold
+                        )
                     )
-                )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
             }
 
-            val tareasDelDia = fechaSeleccionada?.let { tareasPorFecha[it] } ?: emptyList()
+            if (tareasDelDia.isEmpty()) {
+                item {
+                    Text(
+                        text = if (fechaSeleccionada == null)
+                            "Toca una fecha para ver sus tareas"
+                        else "No hay tareas para este día",
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        fontFamily = InriaSerif,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                    )
+                }
+            } else {
+                items(tareasDelDia.size) { index ->
+                    val tarea = tareasDelDia[index]
+                    val titulo = tarea["title"] as? String ?: tarea["titulo"] as? String ?: "Sin título"
+                    val fechaLegible = tarea["date"] as? String ?: ""
+                    val horaFormateada = tarea["time"] as? String ?: ""
+                    val importante = tarea["important"] as? Boolean == true
+                    val iconIndex = (tarea["icon"] as? Long)?.toInt() ?: 0
+                    val id = tarea["taskId"] as? String
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                if (tareasDelDia.isEmpty()) {
-                    item {
-                        Text(
-                            text = if (fechaSeleccionada == null)
-                                "Toca una fecha para ver sus tareas"
-                            else "No hay tareas para este día",
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                            fontFamily = InriaSerif,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                    val infoTiempo = buildString {
+                        if (fechaLegible.isNotEmpty()) append(fechaLegible)
+                        if (fechaLegible.isNotEmpty() && horaFormateada.isNotEmpty()) append(" • ")
+                        if (horaFormateada.isNotEmpty()) append(horaFormateada)
+                    }
+                    val textoConFecha =
+                        if (infoTiempo.isNotEmpty()) "$titulo - $infoTiempo" else titulo
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(90.dp)
+                            .padding(horizontal = 20.dp, vertical = 4.dp)
+                    ) {
+                        SwipeableTaskItem(
+                            textoTarea = textoConFecha,
+                            fechaTarea = tarea["date"] as? String,
+                            isCafe = (index % 2 == 0),
+                            iconIndex = iconIndex,
+                            onCircleClick = {
+                                if (id != null) {
+                                    taskRepository.markTaskAsCompleted(id, true) {
+                                        cargarTareas()
+                                    }
+                                }
+                            },
+                            onImportanteClick = {
+                                if (id != null) {
+                                    taskRepository.toggleTaskImportance(id, importante) {
+                                        cargarTareas()
+                                    }
+                                }
+                            },
+                            onFechaClick = {},
+                            onBasuraClick = {},
+                            onEliminar = {
+                                if (id != null) {
+                                    taskRepository.deleteTask(id) {
+                                        cargarTareas()
+                                    }
+                                }
+                            },
+                            onClick = {}
                         )
                     }
-                } else {
-                    items(tareasDelDia.size) { index ->
-                        val tarea = tareasDelDia[index]
-                        val titulo = tarea["title"] as? String ?: tarea["titulo"] as? String ?: "Sin título"
-                        val fechaLegible = tarea["date"] as? String ?: ""
-                        val horaFormateada = tarea["time"] as? String ?: ""
-                        val importante = tarea["important"] as? Boolean == true
-                        val iconIndex = (tarea["icon"] as? Long)?.toInt() ?: 0
-                        val id = tarea["taskId"] as? String
-
-                        val infoTiempo = buildString {
-                            if (fechaLegible.isNotEmpty()) append(fechaLegible)
-                            if (fechaLegible.isNotEmpty() && horaFormateada.isNotEmpty()) append(" • ")
-                            if (horaFormateada.isNotEmpty()) append(horaFormateada)
-                        }
-                        val textoConFecha =
-                            if (infoTiempo.isNotEmpty()) "$titulo - $infoTiempo" else titulo
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(90.dp)
-                                .padding(vertical = 4.dp)
-                        ) {
-                            SwipeableTaskItem(
-                                textoTarea = textoConFecha,
-                                fechaTarea = tarea["date"] as? String,
-                                isCafe = (index % 2 == 0),
-                                iconIndex = iconIndex,
-                                onCircleClick = {
-                                    if (id != null) {
-                                        taskRepository.markTaskAsCompleted(id, true) {
-                                            cargarTareas()
-                                        }
-                                    }
-                                },
-                                onImportanteClick = {
-                                    if (id != null) {
-                                        taskRepository.toggleTaskImportance(id, importante) {
-                                            cargarTareas()
-                                        }
-                                    }
-                                },
-                                onFechaClick = {},
-                                onBasuraClick = {},
-                                onEliminar = {
-                                    if (id != null) {
-                                        taskRepository.deleteTask(id) {
-                                            cargarTareas()
-                                        }
-                                    }
-                                },
-                                onClick = {}
-                            )
-                        }
-                    }
                 }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

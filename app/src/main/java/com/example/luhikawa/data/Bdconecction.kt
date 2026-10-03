@@ -34,13 +34,11 @@ import com.google.firebase.firestore.SetOptions
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
-// Repositorio de Tareas
 class TaskRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
 
-    // Retorna estrictamente el UID del usuario en sesión activa
     fun getUserId(context: Context? = null): String? {
         val authUid = auth.currentUser?.uid
         if (!authUid.isNullOrEmpty()) return authUid
@@ -136,8 +134,6 @@ class TaskRepository(
 class UserRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
-
-    // Estandarizado a la colección "usuarios" (la misma que usas en Auth y Theme)
     fun getUserProfileUrl(userId: String, onSuccess: (String) -> Unit) {
         if (userId.isBlank()) return
         db.collection("usuarios").document(userId).get()
@@ -157,8 +153,6 @@ class UserRepository(
                 onSuccess(nombres)
             }
     }
-
-    // Consulta aislada estrictamente por el UID del usuario
     fun getUserPhotoBase64(userId: String, onSuccess: (String?) -> Unit) {
         if (userId.isBlank()) {
             onSuccess(null)

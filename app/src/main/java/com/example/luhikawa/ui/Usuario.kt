@@ -103,6 +103,7 @@ import com.example.luhikawa.data.StoredAccount
 import com.example.luhikawa.data.UserRepository
 import com.example.luhikawa.ui.HomeComponents.HeaderSection
 import com.example.luhikawa.ui.HomeComponents.ParteAbajo
+import com.example.luhikawa.ui.HomeComponents.RectanguloConImagen
 import com.example.luhikawa.ui.components.SeccionCambiarTema
 import com.example.luhikawa.ui.theme.InriaSerif
 import com.example.luhikawa.ui.theme.ThemeViewModel
@@ -406,7 +407,7 @@ fun PerfilScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        HeaderSection()
+        RectanguloConImagen()
 
         Column(
             modifier = Modifier

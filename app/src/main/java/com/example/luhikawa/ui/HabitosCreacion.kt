@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -99,63 +101,74 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            HeaderSection()
+            RectanguloConImagen()
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 24.dp)
-                    .padding(top = 16.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.SpaceBetween
+                    .padding(top = 16.dp, bottom = 24.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    NuevoRecordatorioHeader(isEditing = !taskId.isNullOrEmpty())
+                NuevoRecordatorioHeader(isEditing = !taskId.isNullOrEmpty())
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Text(
-                        text = "Detalles",
-                        style = TextStyle(
-                            fontFamily = InriaSerif,
-                            fontSize = 26.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                Text(
+                    text = "Detalles",
+                    style = TextStyle(
+                        fontFamily = InriaSerif,
+                        fontSize = 26.sp,
+                        color = MaterialTheme.colorScheme.primary
                     )
+                )
 
-                    Spacer(modifier = Modifier.height(14.dp))
-
+                Column(modifier = Modifier.fillMaxWidth()) {
                     InputLabel(text = "Nombre del recordatorio")
                     Spacer(modifier = Modifier.height(6.dp))
-                    OutlinedTextFieldCustom(
+                    OutlinedTextField(
                         value = reminderName,
                         onValueChange = { reminderName = it },
-                        placeholder = "Ej: Cita con el dentista"
+                        placeholder = {
+                            Text(
+                                text = "Ej: Cita con el dentista",
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                fontFamily = InriaSerif
+                            )
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
+                }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
+                Column(modifier = Modifier.fillMaxWidth()) {
                     InputLabel(text = "Ícono")
                     Spacer(modifier = Modifier.height(6.dp))
                     IconSelector(
                         selectedIndex = selectedIcon,
                         onIconSelected = { selectedIcon = it }
                     )
+                }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
+                Column(modifier = Modifier.fillMaxWidth()) {
                     InputLabel(text = "Importancia")
                     Spacer(modifier = Modifier.height(6.dp))
                     ImportanceSelector(
                         selectedOption = selectedImportance,
                         onOptionSelected = { selectedImportance = it }
                     )
+                }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
+                Column(modifier = Modifier.fillMaxWidth()) {
                     InputLabel(text = "Fecha y Hora")
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(
@@ -186,17 +199,19 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                             )
                         }
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                Column(modifier = Modifier.fillMaxWidth()) {
                     InputLabel(text = "Clasificación")
                     Spacer(modifier = Modifier.height(6.dp))
                     IndexStyleCategorySelector(
                         selectedCategory = selectedCategory,
                         onCategorySelected = { selectedCategory = it }
                     )
+                }
 
-                    if (selectedCategory == "Hábitos") {
-                        Spacer(modifier = Modifier.height(16.dp))
+                if (selectedCategory == "Hábitos") {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         InputLabel(text = "Frecuencia de repetición")
                         Spacer(modifier = Modifier.height(6.dp))
                         FrequencySelector(
@@ -204,8 +219,6 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                             onOptionSelected = { selectedFrequency = it }
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(20.dp))
                 }
 
                 Button(
@@ -307,6 +320,43 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                         )
                     )
                 }
+
+                // Opción para eliminar tarea al deslizar hacia abajo (solo si se está editando)
+                if (!taskId.isNullOrEmpty()) {
+                    OutlinedButton(
+                        onClick = {
+                            repository.deleteTask(taskId) {
+                                Toast.makeText(context, "Tarea eliminada", Toast.LENGTH_SHORT).show()
+                                navController.popBackStack()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Eliminar tarea",
+                            style = TextStyle(
+                                fontFamily = InriaSerif,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
 

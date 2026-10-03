@@ -13,13 +13,16 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -71,8 +74,6 @@ import com.example.luhikawa.data.AccountManager
 import com.example.luhikawa.data.switchNextAccount
 import com.example.luhikawa.ui.theme.AccentAzulMarino
 import com.example.luhikawa.ui.theme.AccentBlanco
-import com.example.luhikawa.ui.theme.AccentBordera
-import com.example.luhikawa.ui.theme.AccentColor32
 import com.example.luhikawa.ui.theme.AccentDorado
 import com.example.luhikawa.ui.theme.AccentGrisTitanio
 import com.example.luhikawa.ui.theme.AccentMarron
@@ -80,12 +81,7 @@ import com.example.luhikawa.ui.theme.AccentVerdeAmarillito
 import com.example.luhikawa.ui.theme.AccentVerdeEsmeralda
 import com.example.luhikawa.ui.theme.AccentVinoTinto
 import com.example.luhikawa.ui.theme.AppTheme
-import com.example.luhikawa.ui.theme.BackgroundColor
-import com.example.luhikawa.ui.theme.BgBeigea
-import com.example.luhikawa.ui.theme.BgDarka
 import com.example.luhikawa.ui.theme.InriaSerif
-import com.example.luhikawa.ui.theme.TextBeigea
-import com.example.luhikawa.ui.theme.TextDarka
 
 @Composable
 fun RectanguloConImagen() {
@@ -547,36 +543,46 @@ fun ParteAbajo(navController: NavController) {
     )
     {
 // CALENDARIO
-        BottomNavItem(
-            icon = Icons.Default.CalendarMonth,
-            contentDescription = "Calendario",
-            tint = Color.White,
-            onClick = {
-                if (currentRoute != "calendario") {
-                    navController.navigate("calendario") {
-                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
+        Box(
+            modifier = Modifier.size(56.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            BottomNavItem(
+                icon = Icons.Default.CalendarMonth,
+                contentDescription = "Calendario",
+                tint = Color.White,
+                onClick = {
+                    if (currentRoute != "calendario") {
+                        navController.navigate("calendario") {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 }
-            }
-        )
+            )
+        }
 
 // IA
-        BottomNavItem(
-            icon = Icons.Default.AutoAwesome,
-            contentDescription = "IA",
-            tint = Color.White,
-            onClick = {
-                if (currentRoute != "ia") {
-                    navController.navigate("ia") {
-                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
+        Box(
+            modifier = Modifier.size(56.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            BottomNavItem(
+                icon = Icons.Default.AutoAwesome,
+                contentDescription = "IA",
+                tint = Color.White,
+                onClick = {
+                    if (currentRoute != "ia") {
+                        navController.navigate("ia") {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 }
-            }
-        )
+            )
+        }
 // RECORDATORIO
         Box(
             modifier = Modifier
@@ -592,20 +598,28 @@ fun ParteAbajo(navController: NavController) {
                             restoreState = true
                         }
                     }
-                }
-        )
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            // Icono o contenido del recordatorio si lo lleva dentro
+        }
 // HOME / AGENDA
-        BottomNavItem(
-            icon = Icons.Default.Home,
-            contentDescription = "Agenda",
-            tint = Color.White,
-            onClick = {
-                navController.navigate("greeting") {
-                    popUpTo("greeting") { inclusive = true }
-                    launchSingleTop = true
+        Box(
+            modifier = Modifier.size(56.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            BottomNavItem(
+                icon = Icons.Default.Home,
+                contentDescription = "Agenda",
+                tint = Color.White,
+                onClick = {
+                    navController.navigate("greeting") {
+                        popUpTo("greeting") { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
-            }
-        )
+            )
+        }
 // PERFIL
         Box(
             modifier = Modifier
@@ -644,7 +658,8 @@ fun ParteAbajo(navController: NavController) {
             Icon(
                 imageVector = Icons.Default.PersonOutline,
                 contentDescription = "Perfil",
-                tint = Color.White
+                tint = Color.White,
+                modifier = Modifier.size(28.dp)
             )
         }
     }
@@ -747,5 +762,31 @@ sealed class Screen(val route: String) {
     object Ia : Screen("ia")
     object Recordatorio : Screen("recordatorio?taskId={taskId}") {
         fun createRoute(taskId: String? = null) = if (taskId != null) "recordatorio?taskId=$taskId" else "recordatorio"
+    }
+}
+
+@Composable
+fun PantallaConScroll(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp) // Espacio al final para que no tape la barra inferior
+                ) {
+                    content()
+                }
+            }
+        }
     }
 }
