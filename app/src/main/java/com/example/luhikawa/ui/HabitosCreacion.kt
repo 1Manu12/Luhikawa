@@ -24,27 +24,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.luhikawa.ui.theme.BgBeigea
-import com.example.luhikawa.ui.theme.BgDarka
 import com.example.luhikawa.ui.theme.InriaSerif
-import com.example.luhikawa.ui.theme.TextBeigea
-import com.example.luhikawa.ui.theme.TextDarka
 import com.example.luhikawa.data.TaskRepository
+import com.example.luhikawa.data.AccountManager
 import com.example.luhikawa.R
+import com.google.firebase.auth.FirebaseAuth
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.Calendar
 import com.example.luhikawa.ui.HomeComponents.*
-
+import com.example.luhikawa.ui.theme.luhikawaTheme
 
 class MainActivityH : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            luhikawaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = BgDarka
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
                     RegistroScreen(navController = navController)
@@ -54,7 +52,6 @@ class MainActivityH : ComponentActivity() {
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
@@ -63,6 +60,11 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
     var selectedImportance by remember { mutableStateOf("Alta") }
 
     val context = LocalContext.current
+    val accountManager = remember { AccountManager(context) }
+
+    val activeUserId = FirebaseAuth.getInstance().currentUser?.uid
+        ?: accountManager.getCurrentAccountUid()
+
     var selectedDate by remember { mutableStateOf("15 Oct 2026") }
     var selectedTime by remember { mutableStateOf("16:00") }
 
@@ -93,7 +95,7 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(BgDarka)) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -120,7 +122,7 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                         style = TextStyle(
                             fontFamily = InriaSerif,
                             fontSize = 26.sp,
-                            color = TextBeigea
+                            color = MaterialTheme.colorScheme.primary
                         )
                     )
 
@@ -208,69 +210,90 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
 
                 Button(
                     onClick = {
-                        if (reminderName.isNotBlank()) {
-                            val dateParts = selectedDate.split(" ")
-                            val monthMap = mapOf(
-                                "Ene" to 1, "Feb" to 2, "Mar" to 3, "Abr" to 4, "May" to 5, "Jun" to 6,
-                                "Jul" to 7, "Ago" to 8, "Sep" to 9, "Oct" to 10, "Nov" to 11, "Dic" to 12
-                            )
-                            val day = dateParts[0].toInt()
-                            val month = monthMap[dateParts[1]] ?: 1
-                            val year = dateParts[2].toInt()
-                            val fechaIso = "%04d-%02d-%02d".format(year, month, day)
-
-                            val taskMap = mutableMapOf<String, Any>(
-                                "title" to reminderName,
-                                "category" to if (selectedCategory == "Todo") "Tareas" else selectedCategory,
-                                "date" to selectedDate,
-                                "dueDate" to fechaIso,
-                                "time" to selectedTime,
-                                "importance" to selectedImportance,
-                                "icon" to selectedIcon,
-                                "completed" to false
-                            )
-
-                            if (selectedCategory == "Hábitos") {
-                                taskMap["frequency"] = selectedFrequency
-                            }
-
-                            val onSuccessAction = {
-                                Toast.makeText(
-                                    context,
-                                    if (!taskId.isNullOrEmpty()) "¡Actualizado con éxito!" else "¡Guardado con éxito!",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                navController.popBackStack()
-                                Unit
-                            }
-
-                            val onFailureAction: (Exception) -> Unit = { e ->
-                                Toast.makeText(
-                                    context,
-                                    "Error: ${e.localizedMessage}",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-
-                            if (!taskId.isNullOrEmpty()) {
-                                repository.updateTask(taskId, taskMap, onSuccessAction, onFailureAction)
-                            } else {
-                                repository.saveTask(taskMap, onSuccessAction, onFailureAction)
-                            }
-                        } else {
+                        if (reminderName.isBlank()) {
                             Toast.makeText(
                                 context,
                                 "Por favor escribe un nombre",
                                 Toast.LENGTH_SHORT
                             ).show()
+                            return@Button
+                        }
+
+                        if (activeUserId.isNullOrEmpty()) {
+                            Toast.makeText(
+                                context,
+                                "Error: Usuario no autenticado",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+
+                        val dateParts = selectedDate.split(" ")
+                        val monthMap = mapOf(
+                            "Ene" to 1, "Feb" to 2, "Mar" to 3, "Abr" to 4, "May" to 5, "Jun" to 6,
+                            "Jul" to 7, "Ago" to 8, "Sep" to 9, "Oct" to 10, "Nov" to 11, "Dic" to 12
+                        )
+                        val day = dateParts.getOrNull(0)?.toIntOrNull() ?: 15
+                        val month = monthMap[dateParts.getOrNull(1)] ?: 10
+                        val year = dateParts.getOrNull(2)?.toIntOrNull() ?: 2026
+                        val fechaIso = "%04d-%02d-%02d".format(year, month, day)
+
+                        val taskMap = mutableMapOf<String, Any>(
+                            "userId" to activeUserId,
+                            "title" to reminderName,
+                            "category" to if (selectedCategory == "Todo") "Tareas" else selectedCategory,
+                            "date" to selectedDate,
+                            "dueDate" to fechaIso,
+                            "time" to selectedTime,
+                            "importance" to selectedImportance,
+                            "icon" to selectedIcon,
+                            "completed" to false
+                        )
+
+                        if (selectedCategory == "Hábitos") {
+                            taskMap["frequency"] = selectedFrequency
+                        }
+
+                        val onSuccessAction = {
+                            Toast.makeText(
+                                context,
+                                if (!taskId.isNullOrEmpty()) "¡Actualizado con éxito!" else "¡Guardado con éxito!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            navController.popBackStack()
+                            Unit
+                        }
+
+                        val onFailureAction: (Exception) -> Unit = { e ->
+                            Toast.makeText(
+                                context,
+                                "Error: ${e.localizedMessage}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+
+                        if (!taskId.isNullOrEmpty()) {
+                            repository.updateTask(
+                                taskId = taskId,
+                                taskMap = taskMap,
+                                onSuccess = onSuccessAction,
+                                onFailure = onFailureAction
+                            )
+                        } else {
+                            repository.saveTask(
+                                taskMap = taskMap,
+                                context = context,
+                                onSuccess = onSuccessAction,
+                                onFailure = onFailureAction
+                            )
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = BgBeigea,
-                        contentColor = TextDarka
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -279,7 +302,8 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                         style = TextStyle(
                             fontFamily = InriaSerif,
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     )
                 }
@@ -310,37 +334,46 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                             showDatePicker = false
                         }
                     ) {
-                        Text("Aceptar", fontFamily = InriaSerif, color = BgBeigea, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Aceptar",
+                            fontFamily = InriaSerif,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDatePicker = false }) {
-                        Text("Cancelar", fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f))
+                        Text(
+                            "Cancelar",
+                            fontFamily = InriaSerif,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                     }
                 },
                 colors = DatePickerDefaults.colors(
-                    containerColor = BgDarka
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
                 DatePicker(
                     state = datePickerState,
                     colors = DatePickerDefaults.colors(
-                        containerColor = BgDarka,
-                        titleContentColor = TextBeigea,
-                        headlineContentColor = BgBeigea,
-                        weekdayContentColor = TextBeigea.copy(alpha = 0.6f),
-                        subheadContentColor = TextBeigea,
-                        yearContentColor = TextBeigea,
-                        currentYearContentColor = BgBeigea,
-                        selectedYearContentColor = BgDarka,
-                        selectedYearContainerColor = BgBeigea,
-                        dayContentColor = TextBeigea,
-                        disabledDayContentColor = TextBeigea.copy(alpha = 0.2f),
-                        selectedDayContentColor = BgDarka,
-                        selectedDayContainerColor = BgBeigea,
-                        todayContentColor = BgBeigea,
-                        todayDateBorderColor = BgBeigea,
-                        navigationContentColor = BgBeigea
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        headlineContentColor = MaterialTheme.colorScheme.primary,
+                        weekdayContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        subheadContentColor = MaterialTheme.colorScheme.onSurface,
+                        yearContentColor = MaterialTheme.colorScheme.onSurface,
+                        currentYearContentColor = MaterialTheme.colorScheme.primary,
+                        selectedYearContentColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedYearContainerColor = MaterialTheme.colorScheme.primary,
+                        dayContentColor = MaterialTheme.colorScheme.onSurface,
+                        disabledDayContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                        selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                        todayContentColor = MaterialTheme.colorScheme.primary,
+                        todayDateBorderColor = MaterialTheme.colorScheme.primary,
+                        navigationContentColor = MaterialTheme.colorScheme.primary
                     )
                 )
             }
@@ -375,5 +408,3 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
         }
     }
 }
-
-

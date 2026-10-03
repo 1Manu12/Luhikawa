@@ -38,21 +38,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.luhikawa.R
 
-val BgDark3 = Color(0xFF1A1717)
-val BgBeige3 = Color(0xFFC7AF93)
-val TextBeige3 = Color(0xFFC7AF93)
-val TextDark3 = Color(0xFF1A1717)
-val AccentBorder3 = Color(0xFFC7AF93)
-val AccentColor32 = Color(0xFFC7AF93)
+import com.example.luhikawa.ui.theme.luhikawaTheme
 
 class MainActivityIA : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            luhikawaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = BgDark3
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     AiScreen()
                 }
@@ -66,7 +61,7 @@ fun AiScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgDark3)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
@@ -88,7 +83,7 @@ fun AiScreen() {
                     style = TextStyle(
                         fontFamily = FontFamily.Serif,
                         fontSize = 32.sp,
-                        color = TextBeige3,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                 )
@@ -96,7 +91,10 @@ fun AiScreen() {
                 Card(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = BgBeige3)
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 ) {
                     Text(
                         text = "¡Hola! Soy tu asistente de IA luhikawa. ¿En qué puedo ayudarte hoy?",
@@ -104,7 +102,7 @@ fun AiScreen() {
                         style = TextStyle(
                             fontFamily = FontFamily.Serif,
                             fontSize = 14.sp,
-                            color = TextDark3
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                 }
@@ -119,7 +117,10 @@ fun AiScreen() {
                 Spacer(modifier = Modifier.width(40.dp))
                 Card(
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = BgBeige3)
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 ) {
                     Text(
                         text = "Dime cómo mejorar mi presentación...",
@@ -127,7 +128,7 @@ fun AiScreen() {
                         style = TextStyle(
                             fontFamily = FontFamily.Serif,
                             fontSize = 14.sp,
-                            color = TextDark3
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                 }
@@ -135,16 +136,13 @@ fun AiScreen() {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-
             Spacer(modifier = Modifier.height(10.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Bottom
             ) {
-
                 Spacer(modifier = Modifier.weight(1f))
-
             }
         }
 
@@ -156,7 +154,10 @@ fun AiScreen() {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = BgBeige3)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             ) {
                 Row(
                     modifier = Modifier
@@ -170,13 +171,13 @@ fun AiScreen() {
                         style = TextStyle(
                             fontFamily = FontFamily.Serif,
                             fontSize = 14.sp,
-                            color = TextDark3.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     )
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.send_24),
                         contentDescription = "Enviar",
-                        tint = TextDark3,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -198,7 +199,7 @@ fun BottomNavItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (isSelected) TextBeige3 else TextBeige3.copy(alpha = 0.7f),
+            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
@@ -206,7 +207,7 @@ fun BottomNavItem(
             text = label,
             style = TextStyle(
                 fontSize = 10.sp,
-                color = if (isSelected) TextBeige3 else TextBeige3.copy(alpha = 0.7f)
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )
         )
     }
@@ -220,7 +221,10 @@ fun AportacionCard(
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = BgBeige3),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
         modifier = modifier
     ) {
         Row(
@@ -233,7 +237,7 @@ fun AportacionCard(
                 style = TextStyle(
                     fontFamily = FontFamily.Serif,
                     fontSize = 12.sp,
-                    color = TextDark3,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold
                 ),
                 modifier = Modifier.weight(1f)
@@ -241,7 +245,7 @@ fun AportacionCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = TextDark3,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -254,7 +258,7 @@ fun RectanguloConImagen2() {
         modifier = Modifier
             .fillMaxWidth()
             .height(65.dp)
-            .background(AccentColor32),
+            .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center
     ) {
         Image(

@@ -47,20 +47,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.luhikawa.ui.theme.BgDarka
 import com.example.luhikawa.ui.theme.InriaSerif
-import com.example.luhikawa.ui.theme.TextBeigea
+import com.example.luhikawa.ui.theme.luhikawaTheme
 import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
 
-
-val CustomFontFamilye = FontFamily.Serif
 
 class MainActivityCalendar : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            luhikawaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -141,10 +138,11 @@ fun CalendarScreen(navController: NavController) {
         }.filterKeys { it != null }
     }
 
+    @Composable
     fun colorParaFecha(fecha: LocalDate): Color? {
         val tareasDelDia = tareasPorFecha[fecha] ?: return null
         val maxImportante = tareasDelDia.any { it["important"] as? Boolean == true }
-        return if (maxImportante) Color(0xFF5D4037) else Color(0xFFC7AF93)
+        return if (maxImportante) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary
     }
 
     val mesNombre = listOf(
@@ -161,7 +159,7 @@ fun CalendarScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgDarka)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -184,7 +182,7 @@ fun CalendarScreen(navController: NavController) {
                     Icon(
                         Icons.Default.KeyboardArrowLeft,
                         contentDescription = "Mes anterior",
-                        tint = TextBeigea,
+                        tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.clickable {
                             if (mes == 1) {
                                 mes = 12
@@ -200,14 +198,14 @@ fun CalendarScreen(navController: NavController) {
                         style = TextStyle(
                             fontFamily = InriaSerif,
                             fontSize = 22.sp,
-                            color = TextBeigea
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Icon(
                         Icons.Default.KeyboardArrowRight,
                         contentDescription = "Mes siguiente",
-                        tint = TextBeigea,
+                        tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.clickable {
                             if (mes == 12) {
                                 mes = 1
@@ -228,7 +226,7 @@ fun CalendarScreen(navController: NavController) {
                             text = d,
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center,
-                            color = TextBeigea.copy(alpha = 0.5f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             fontFamily = InriaSerif
                         )
                     }
@@ -273,7 +271,7 @@ fun CalendarScreen(navController: NavController) {
                                                 )
                                             ) != null
                                         )
-                                            Color.White else TextBeigea,
+                                            MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground,
                                         fontFamily = InriaSerif,
                                         fontSize = 15.sp
                                     )
@@ -290,7 +288,7 @@ fun CalendarScreen(navController: NavController) {
                     style = TextStyle(
                         fontFamily = InriaSerif,
                         fontSize = 20.sp,
-                        color = TextBeigea,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold
                     )
                 )
@@ -311,7 +309,7 @@ fun CalendarScreen(navController: NavController) {
                             text = if (fechaSeleccionada == null)
                                 "Toca una fecha para ver sus tareas"
                             else "No hay tareas para este día",
-                            color = TextBeigea.copy(alpha = 0.5f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             fontFamily = InriaSerif,
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
                         )

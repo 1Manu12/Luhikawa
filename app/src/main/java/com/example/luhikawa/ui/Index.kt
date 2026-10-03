@@ -6,7 +6,6 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,7 +30,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
@@ -56,8 +55,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -66,25 +65,22 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.luhikawa.R
 import com.example.luhikawa.data.TaskRepository
-import com.example.luhikawa.ui.HomeComponents.*
-import com.example.luhikawa.ui.theme.AccentColor32
-import com.example.luhikawa.ui.theme.BgDarka
+import com.example.luhikawa.ui.HomeComponents.EtiquetaTexto
+import com.example.luhikawa.ui.HomeComponents.ImagenDerechaTextoIzquierda
+import com.example.luhikawa.ui.HomeComponents.RectanguloCompletadoPapelera
+import com.example.luhikawa.ui.HomeComponents.RectanguloConImagen
+import com.example.luhikawa.ui.HomeComponents.getIconFromIndex
 import com.example.luhikawa.ui.theme.luhikawaTheme
 import java.util.Calendar
 import java.util.TimeZone
-import androidx.navigation.NavHostController
-
-val BackgroundColor = Color(0xFF1A1717)
-val AccentColor3 = Color(0xFFC7AF93)
 
 val InriaSerif = FontFamily(
     Font(R.font.inriaserif_regular)
@@ -94,14 +90,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            luhikawaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
 
-                    // NavHost directo sin Scaffold envolvente
                     NavHost(
                         navController = navController,
                         startDestination = "login"
@@ -131,7 +126,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     private fun pedirPermisoNotificaciones() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -147,10 +141,9 @@ fun Greeting(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     repository: TaskRepository = remember { TaskRepository() }
-
 ) {
     var categoriaSeleccionada by remember { mutableStateOf("Todas") }
-
+    val context = LocalContext.current
     val categorias = listOf(
         "Todas",
         "Trabajo",
@@ -174,7 +167,7 @@ fun Greeting(
     var selectedTaskIdForRestore by remember { mutableStateOf<String?>(null) }
 
     val cargarTareas = {
-        repository.getTasksQuery(categoriaSeleccionada)
+        repository.getTasksQuery(categoriaSeleccionada, context = context)
             .get()
             .addOnSuccessListener { result ->
                 listaDeTareas = result.documents.mapNotNull { doc ->
@@ -218,11 +211,10 @@ fun Greeting(
         !(tarea["completed"] as? Boolean ?: false)
     }
 
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = BackgroundColor,
-        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -234,7 +226,6 @@ fun Greeting(
             ) {
                 RectanguloConImagen()
 
-                // Selector de categorías horizontal
                 Row(
                     modifier = Modifier
                         .padding(top = 15.dp)
@@ -253,7 +244,7 @@ fun Greeting(
 
                 Text(
                     text = "Tienes ${tareasPendientesTotales.size} tareas pendientes",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 26.sp,
                     fontFamily = InriaSerif,
                     modifier = Modifier
@@ -264,7 +255,7 @@ fun Greeting(
 
                 Text(
                     text = "Today´s Focus",
-                    color = Color(0xFFC7AF93),
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .padding(top = 8.dp)
                         .padding(horizontal = 12.dp)
@@ -284,7 +275,7 @@ fun Greeting(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Importantes (${tareasImportantes.size})",
-                                color = Color(0xFFC7AF93),
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 18.sp,
                                 fontFamily = InriaSerif,
                                 fontWeight = FontWeight.Bold,
@@ -392,7 +383,7 @@ fun Greeting(
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = "Completadas (${tareasCompletadas.size})",
-                                color = Color(0xFFC7AF93),
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 18.sp,
                                 fontFamily = InriaSerif,
                                 fontWeight = FontWeight.Bold,
@@ -446,31 +437,52 @@ fun Greeting(
                                 showDatePicker = false
                             }
                         ) {
-                            Text("Aceptar", fontFamily = InriaSerif)
+                            Text("Aceptar", fontFamily = InriaSerif, color = MaterialTheme.colorScheme.primary)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showDatePicker = false }) {
-                            Text("Cancelar", fontFamily = InriaSerif)
+                            Text("Cancelar", fontFamily = InriaSerif, color = MaterialTheme.colorScheme.primary)
                         }
                     },
-                    colors = DatePickerDefaults.colors(containerColor = BackgroundColor)
+                    colors = DatePickerDefaults.colors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
-                    DatePicker(state = datePickerState)
+                    DatePicker(
+                        state = datePickerState,
+                        colors = DatePickerDefaults.colors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface,
+                            headlineContentColor = MaterialTheme.colorScheme.primary,
+                            weekdayContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            subheadContentColor = MaterialTheme.colorScheme.onSurface,
+                            yearContentColor = MaterialTheme.colorScheme.onSurface,
+                            currentYearContentColor = MaterialTheme.colorScheme.primary,
+                            selectedYearContentColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedYearContainerColor = MaterialTheme.colorScheme.primary,
+                            dayContentColor = MaterialTheme.colorScheme.onSurface,
+                            disabledDayContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                            selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                            todayContentColor = MaterialTheme.colorScheme.primary,
+                            todayDateBorderColor = MaterialTheme.colorScheme.primary,
+                            navigationContentColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
                 }
             }
 
             if (showDeleteDialog) {
                 AlertDialog(
                     onDismissRequest = { showDeleteDialog = false },
+                    containerColor = MaterialTheme.colorScheme.surface,
                     title = {
-                        Text(text = "Eliminar tarea", fontFamily = InriaSerif, color = Color.White)
+                        Text(text = "Eliminar tarea", fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface)
                     },
                     text = {
                         Text(
                             text = "¿Estás segura de que la quieres eliminar?",
                             fontFamily = InriaSerif,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     },
                     confirmButton = {
@@ -483,7 +495,7 @@ fun Greeting(
                                 taskIdToDelete = null
                             }
                         ) {
-                            Text("Sí, eliminar", color = Color(0xFFE57373), fontFamily = InriaSerif)
+                            Text("Sí, eliminar", color = MaterialTheme.colorScheme.error, fontFamily = InriaSerif)
                         }
                     },
                     dismissButton = {
@@ -493,27 +505,24 @@ fun Greeting(
                                 taskIdToDelete = null
                             }
                         ) {
-                            Text("Cancelar", fontFamily = InriaSerif, color = Color.White)
+                            Text("Cancelar", fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface)
                         }
-                    },
-                    modifier = Modifier.background(
-                        BackgroundColor,
-                        shape = RoundedCornerShape(28.dp)
-                    )
+                    }
                 )
             }
 
             if (showRestoreDialog) {
                 AlertDialog(
                     onDismissRequest = { showRestoreDialog = false },
+                    containerColor = MaterialTheme.colorScheme.surface,
                     title = {
-                        Text(text = "Restaurar tarea", fontFamily = InriaSerif, color = Color.White)
+                        Text(text = "Restaurar tarea", fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface)
                     },
                     text = {
                         Text(
                             text = "¿Quieres restablecer esta tarea a su estado anterior?",
                             fontFamily = InriaSerif,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     },
                     confirmButton = {
@@ -528,7 +537,7 @@ fun Greeting(
                         ) {
                             Text(
                                 "Sí, restablecer",
-                                color = Color(0xFFC7AF93),
+                                color = MaterialTheme.colorScheme.primary,
                                 fontFamily = InriaSerif
                             )
                         }
@@ -540,221 +549,216 @@ fun Greeting(
                                 selectedTaskIdForRestore = null
                             }
                         ) {
-                            Text("Cancelar", fontFamily = InriaSerif, color = Color.White)
+                            Text("Cancelar", fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface)
                         }
-                    },
-                    modifier = Modifier.background(
-                        BackgroundColor,
-                        shape = RoundedCornerShape(28.dp)
-                    )
+                    }
                 )
             }
         }
     }
 }
 
-    @Composable
-    fun SwipeableTaskItem(
-        textoTarea: String,
-        fechaTarea: String? = null,
-        isCafe: Boolean,
-        iconIndex: Int,
-        onCircleClick: () -> Unit,
-        onImportanteClick: () -> Unit,
-        onFechaClick: () -> Unit,
-        onBasuraClick: () -> Unit,
-        onEliminar: () -> Unit,
-        onClick: () -> Unit
+@Composable
+fun SwipeableTaskItem(
+    textoTarea: String,
+    fechaTarea: String? = null,
+    isCafe: Boolean,
+    iconIndex: Int,
+    onCircleClick: () -> Unit,
+    onImportanteClick: () -> Unit,
+    onFechaClick: () -> Unit,
+    onBasuraClick: () -> Unit,
+    onEliminar: () -> Unit,
+    onClick: () -> Unit
+) {
+    var offsetX by remember { mutableStateOf(0f) }
+    val maxRevealWidth = 270.dp
+    val density = LocalDensity.current
+    val maxRevealWidthPx = with(density) { maxRevealWidth.toPx() }
+
+    val animatedOffset by animateFloatAsState(
+        targetValue = offsetX,
+        label = "swipeOffset"
+    )
+
+    val cardBackground = if (isCafe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.background
+    val actionBackground = if (isCafe) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.primary
+    val contentColor = if (isCafe) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground
+    val actionContentColor = if (isCafe) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onPrimary
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .height(60.dp)
+            .clip(RoundedCornerShape(22.dp))
     ) {
-        var offsetX by remember { mutableStateOf(0f) }
-        val maxRevealWidth = 270.dp
-        val density = LocalDensity.current
-        val maxRevealWidthPx = with(density) { maxRevealWidth.toPx() }
-
-        val animatedOffset by animateFloatAsState(
-            targetValue = offsetX,
-            label = "swipeOffset"
-        )
-
-        Box(
+        // Fondo con acciones al hacer Swipe
+        Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-                .height(60.dp)
-                .clip(RoundedCornerShape(22.dp))
+                .matchParentSize()
+                .background(
+                    color = actionBackground,
+                    shape = RoundedCornerShape(22.dp)
+                ),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-
-            Row(
+            Box(
                 modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        color = if (isCafe) BackgroundColor else AccentColor32,
-                        shape = RoundedCornerShape(22.dp)
-                    ),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+                    .width(90.dp)
+                    .fillMaxHeight()
+                    .clickable {
+                        onImportanteClick()
+                        offsetX = 0f
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                val contentColor = if (isCafe) Color.White else Color.Black
-
-                Box(
-                    modifier = Modifier
-                        .width(90.dp)
-                        .fillMaxHeight()
-                        .clickable {
-                            onImportanteClick()
-                            offsetX = 0f
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Importante",
-                            tint = contentColor,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = "Importante",
-                            fontSize = 9.sp,
-                            color = contentColor,
-                            fontFamily = InriaSerif
-                        )
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .width(90.dp)
-                        .fillMaxHeight()
-                        .clickable {
-                            onFechaClick()
-                            offsetX = 0f
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "Fecha",
-                            tint = contentColor,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = "Fecha",
-                            fontSize = 9.sp,
-                            color = contentColor,
-                            fontFamily = InriaSerif
-                        )
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .width(90.dp)
-                        .fillMaxHeight()
-                        .clickable {
-                            onBasuraClick()
-                            offsetX = 0f
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Basura",
-                            tint = contentColor,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = "Basura",
-                            fontSize = 9.sp,
-                            color = contentColor,
-                            fontFamily = InriaSerif
-                        )
-                    }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = "Importante",
+                        tint = actionContentColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Importante",
+                        fontSize = 9.sp,
+                        color = actionContentColor,
+                        fontFamily = InriaSerif
+                    )
                 }
             }
 
             Box(
                 modifier = Modifier
-                    .matchParentSize()
-                    .offset { IntOffset(animatedOffset.toInt(), 0) }
-                    .background(
-                        color = if (isCafe) AccentColor32 else BackgroundColor,
-                        shape = RoundedCornerShape(22.dp)
-                    )
-                    .then(
-                        if (!isCafe) Modifier.border(2.dp, AccentColor32, RoundedCornerShape(22.dp))
-                        else Modifier
-                    )
-                    .clickable { onClick() }
-                    .pointerInput(Unit) {
-                        detectHorizontalDragGestures(
-                            onHorizontalDrag = { _, dragAmount ->
-                                val newOffset = offsetX + dragAmount
-                                offsetX = newOffset.coerceIn(-maxRevealWidthPx, 0f)
-                            },
-                            onDragEnd = {
-                                offsetX =
-                                    if (offsetX < -maxRevealWidthPx / 2f) -maxRevealWidthPx else 0f
-                            }
-                        )
+                    .width(90.dp)
+                    .fillMaxHeight()
+                    .clickable {
+                        onFechaClick()
+                        offsetX = 0f
                     },
-                contentAlignment = Alignment.CenterStart
+                contentAlignment = Alignment.Center
             ) {
-                Row(
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(30.dp)
-                            .background(Color.Transparent, shape = CircleShape)
-                            .border(
-                                width = 1.dp,
-                                color = if (isCafe) Color.Black else Color.White,
-                                shape = CircleShape
-                            )
-                            .clickable { onCircleClick() }
-                    )
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
-                        imageVector = getIconFromIndex(iconIndex),
-                        contentDescription = null,
-                        tint = if (isCafe) Color.Black else Color.White,
-                        modifier = Modifier.size(22.dp)
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Fecha",
+                        tint = actionContentColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Fecha",
+                        fontSize = 9.sp,
+                        color = actionContentColor,
+                        fontFamily = InriaSerif
+                    )
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .width(90.dp)
+                    .fillMaxHeight()
+                    .clickable {
+                        onBasuraClick()
+                        offsetX = 0f
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Basura",
+                        tint = actionContentColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Basura",
+                        fontSize = 9.sp,
+                        color = actionContentColor,
+                        fontFamily = InriaSerif
+                    )
+                }
+            }
+        }
+
+        // Tarjeta principal frontal
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .offset { IntOffset(animatedOffset.toInt(), 0) }
+                .background(
+                    color = cardBackground,
+                    shape = RoundedCornerShape(22.dp)
+                )
+                .then(
+                    if (!isCafe) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(22.dp))
+                    else Modifier
+                )
+                .clickable { onClick() }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { _, dragAmount ->
+                            val newOffset = offsetX + dragAmount
+                            offsetX = newOffset.coerceIn(-maxRevealWidthPx, 0f)
+                        },
+                        onDragEnd = {
+                            offsetX = if (offsetX < -maxRevealWidthPx / 2f) -maxRevealWidthPx else 0f
+                        }
+                    )
+                },
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Row(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .background(androidx.compose.ui.graphics.Color.Transparent, shape = CircleShape)
+                        .border(
+                            width = 1.dp,
+                            color = contentColor,
+                            shape = CircleShape
+                        )
+                        .clickable { onCircleClick() }
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Icon(
+                    imageVector = getIconFromIndex(iconIndex),
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(22.dp)
+                )
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp)
+                ) {
+                    Text(
+                        text = textoTarea,
+                        color = contentColor,
+                        fontFamily = InriaSerif,
+                        fontSize = 18.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 12.dp)
-                    ) {
+                    if (!fechaTarea.isNullOrEmpty()) {
                         Text(
-                            text = textoTarea,
-                            color = if (isCafe) Color.Black else Color.White,
+                            text = fechaTarea,
+                            color = contentColor.copy(alpha = 0.6f),
                             fontFamily = InriaSerif,
-                            fontSize = 18.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            fontSize = 12.sp
                         )
-
-                        if (!fechaTarea.isNullOrEmpty()) {
-                            Text(
-                                text = fechaTarea,
-                                color = if (isCafe) Color.Black.copy(alpha = 0.6f) else Color.White.copy(
-                                    alpha = 0.6f
-                                ),
-                                fontFamily = InriaSerif,
-                                fontSize = 12.sp
-                            )
-                        }
                     }
                 }
             }
         }
     }
-
-
+}

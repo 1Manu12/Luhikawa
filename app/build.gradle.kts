@@ -75,4 +75,15 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("com.google.code.gson:gson:2.10.1")
+    dependencies {
+        implementation("com.github.CanHub:Android-Image-Cropper:4.5.0")
+    }
+    dependencies {
+        implementation("androidx.biometric:biometric:1.1.0")
+    }
+    dependencies {
+        implementation("androidx.datastore:datastore-preferences:1.1.1")
+    }
+
 }

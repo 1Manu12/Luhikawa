@@ -53,6 +53,9 @@ import kotlinx.coroutines.launch
 import java.security.SecureRandom
 import com.example.luhikawa.domain.services.AuthService
 import com.example.luhikawa.ui.theme.AccentColor32
+import com.google.firebase.auth.userProfileChangeRequest
+import com.example.luhikawa.data.AccountManager
+import com.example.luhikawa.data.StoredAccount
 
 
 class MainActivityRegistro : ComponentActivity() {
@@ -60,7 +63,7 @@ class MainActivityRegistro : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            luhikawaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = BgDarka
@@ -88,6 +91,8 @@ fun RegistroScreen(navController: NavController) {
     val coroutineScope = rememberCoroutineScope()
     val credentialManager = CredentialManager.create(context)
 
+    val accountManager = remember { AccountManager(context) }
+
     val auth = Firebase.auth
     val db = Firebase.firestore
 
@@ -100,7 +105,7 @@ fun RegistroScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(scrollState)
             .padding(horizontal = 20.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -124,7 +129,7 @@ fun RegistroScreen(navController: NavController) {
                 .fillMaxWidth(0.75f)
                 .wrapContentHeight(),
             contentScale = ContentScale.FillWidth,
-            colorFilter = ColorFilter.tint(AccentColor32)
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
         )
 
         Spacer(modifier = Modifier.height(spacingXL))
@@ -134,18 +139,20 @@ fun RegistroScreen(navController: NavController) {
             onValueChange = { usuario = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Usuario", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Usuario", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentColor32,
-                unfocusedBorderColor = AccentColor32,
-                cursorColor = AccentColor32
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
             ),
             leadingIcon = {
-                Icon(Icons.Default.Person, contentDescription = "Icono Usuario", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(Icons.Default.Person, contentDescription = "Icono Usuario", tint = MaterialTheme.colorScheme.primary)
             }
         )
 
@@ -156,18 +163,20 @@ fun RegistroScreen(navController: NavController) {
             onValueChange = { nombreCompleto = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Nombre Completo", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Nombre Completo", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentColor32,
-                unfocusedBorderColor = AccentColor32,
-                cursorColor = AccentColor32
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
             ),
             leadingIcon = {
-                Icon(Icons.Default.Person, contentDescription = "Icono Nombre", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(Icons.Default.Person, contentDescription = "Icono Nombre", tint = MaterialTheme.colorScheme.primary)
             }
         )
 
@@ -178,18 +187,20 @@ fun RegistroScreen(navController: NavController) {
             onValueChange = { email = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Correo electrónico", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Correo electrónico", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentColor32,
-                unfocusedBorderColor = AccentColor32,
-                cursorColor = AccentColor32
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
             ),
             leadingIcon = {
-                Icon(Icons.Default.Email, contentDescription = "Icono Email", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(Icons.Default.Email, contentDescription = "Icono Email", tint = MaterialTheme.colorScheme.primary)
             }
         )
 
@@ -200,25 +211,27 @@ fun RegistroScreen(navController: NavController) {
             onValueChange = { contrasena = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Contraseña", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Contraseña", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentColor32,
-                unfocusedBorderColor = AccentColor32,
-                cursorColor = AccentColor32
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
             ),
             leadingIcon = {
-                Icon(Icons.Default.Lock, contentDescription = "Icono Contraseña", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(Icons.Default.Lock, contentDescription = "Icono Contraseña", tint = MaterialTheme.colorScheme.primary)
             },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
                 val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Mostrar/Ocultar contraseña", tint = TextBeigea.copy(alpha = 0.7f))
+                    Icon(imageVector = image, contentDescription = "Mostrar/Ocultar contraseña", tint = MaterialTheme.colorScheme.primary)
                 }
             }
         )
@@ -230,25 +243,27 @@ fun RegistroScreen(navController: NavController) {
             onValueChange = { confirmarContrasena = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Confirmar Contraseña", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Confirmar Contraseña", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentColor32,
-                unfocusedBorderColor = AccentColor32,
-                cursorColor = AccentColor32
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
             ),
             leadingIcon = {
-                Icon(Icons.Default.Lock, contentDescription = "Icono Confirmar Contraseña", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(Icons.Default.Lock, contentDescription = "Icono Confirmar Contraseña", tint = MaterialTheme.colorScheme.primary)
             },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
                 val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Mostrar/Ocultar confirmar contraseña", tint = TextBeigea.copy(alpha = 0.7f))
+                    Icon(imageVector = image, contentDescription = "Mostrar/Ocultar confirmar contraseña", tint = MaterialTheme.colorScheme.primary)
                 }
             }
         )
@@ -269,7 +284,21 @@ fun RegistroScreen(navController: NavController) {
                 auth.createUserWithEmailAndPassword(email, contrasena)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            val userId = auth.currentUser?.uid ?: ""
+                            val user = auth.currentUser
+                            val userId = user?.uid ?: ""
+                            val profileUpdates = userProfileChangeRequest {
+                                displayName = nombreCompleto
+                            }
+                            user?.updateProfile(profileUpdates)
+
+                            val storedAccount = StoredAccount(
+                                uid = userId,
+                                email = email,
+                                password = contrasena,
+                                displayName = nombreCompleto
+                            )
+                            accountManager.saveAccount(storedAccount)
+                            accountManager.setCurrentAccount(userId)
 
                             val userMap = hashMapOf(
                                 "uid" to userId,
@@ -297,10 +326,13 @@ fun RegistroScreen(navController: NavController) {
                     }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = AccentColor32, contentColor = BackgroundColor),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
             shape = RoundedCornerShape(28.dp)
         ) {
-            Text("Registrarse", style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, fontWeight = FontWeight.Bold))
+            Text("Registrarse", style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary))
         }
 
         Spacer(modifier = Modifier.height(spacingM))
@@ -312,7 +344,7 @@ fun RegistroScreen(navController: NavController) {
             Box(
                 modifier = Modifier
                     .size(50.dp)
-                    .background(BackgroundColor, shape = CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, shape = CircleShape)
                     .clickable {
                         coroutineScope.launch {
                             try {
@@ -342,6 +374,19 @@ fun RegistroScreen(navController: NavController) {
                                     db = db,
                                     context = context,
                                     onSuccess = {
+                                        val currentUser = auth.currentUser
+                                        if (currentUser != null) {
+                                            val googleAccount = StoredAccount(
+                                                uid = currentUser.uid,
+                                                email = currentUser.email ?: "",
+                                                password = "", // Autenticado vía Google
+                                                displayName = currentUser.displayName
+                                                    ?: currentUser.email ?: ""
+                                            )
+                                            accountManager.saveAccount(googleAccount)
+                                            accountManager.setCurrentAccount(currentUser.uid)
+                                        }
+
                                         navController.navigate("greeting") {
                                             popUpTo("login") { inclusive = true }
                                         }
@@ -368,7 +413,7 @@ fun RegistroScreen(navController: NavController) {
 
         Text(
             text = "¿Ya tienes una cuenta?",
-            style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, color = TextBeigea.copy(alpha = 0.8f), textAlign = TextAlign.Center)
+            style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f), textAlign = TextAlign.Center)
         )
 
         Spacer(modifier = Modifier.height(spacingXS))
@@ -376,7 +421,7 @@ fun RegistroScreen(navController: NavController) {
         Text(
             text = "Inicia sesión",
             style = TextStyle(
-                fontFamily = InriaSerif, fontSize = 18.sp, color = TextBeigea,
+                fontFamily = InriaSerif, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline, textAlign = TextAlign.Center
             ),
             modifier = Modifier.clickable {
@@ -387,56 +432,3 @@ fun RegistroScreen(navController: NavController) {
         )
     }
 }
-
-/*private fun handleGoogleCredentialResponse(
-    result: GetCredentialResponse,
-    auth: FirebaseAuth,
-    db: FirebaseFirestore,
-    context: Context,
-    navController: NavController
-) {
-    val credential = result.credential
-    if (credential is CustomCredential &&
-        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-    ) {
-        try {
-            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-            val googleIdToken = googleIdTokenCredential.idToken
-
-            val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
-
-            auth.signInWithCredential(firebaseCredential)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val firebaseUser = auth.currentUser
-                        val userId = firebaseUser?.uid ?: ""
-                        val email = firebaseUser?.email ?: ""
-                        val nombre = firebaseUser?.displayName ?: "Usuario Google"
-
-                        val userMap = hashMapOf(
-                            "uid" to userId,
-                            "usuario" to nombre,
-                            "nombreCompleto" to nombre,
-                            "email" to email
-                        )
-
-                        db.collection("users").document(userId)
-                            .set(userMap, SetOptions.merge())
-                            .addOnSuccessListener {
-                                Toast.makeText(context, "¡Bienvenida de vuelta, $nombre!", Toast.LENGTH_SHORT).show()
-                                navController.navigate("greeting") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            }
-                            .addOnFailureListener { e ->
-                                Toast.makeText(context, "Error al guardar en Firestore: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                            }
-                    } else {
-                        Toast.makeText(context, "Fallo en Firebase: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
-                    }
-                }
-        } catch (e: Exception) {
-            Toast.makeText(context, "Error al parsear credenciales: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-        }
-    }
-}*/

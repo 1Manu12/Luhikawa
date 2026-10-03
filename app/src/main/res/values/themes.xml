@@ -13,6 +13,14 @@
         <item name="android:textColorSecondary">#C7AF93</item>
     </style>
 
-    <style name="Theme.FinalProject" parent="android:Theme.Material.Light.NoActionBar" />
-    <style name="Theme.Luhikawa" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.FinalProject" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#1A1717</item>
+        <item name="android:statusBarColor">#1A1717</item>
+        <item name="android:navigationBarColor">#1A1717</item>
+    </style>
+    <style name="Theme.Luhikawa" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#1A1717</item>
+        <item name="android:statusBarColor">#1A1717</item>
+        <item name="android:navigationBarColor">#1A1717</item>
+    </style>
 </resources>

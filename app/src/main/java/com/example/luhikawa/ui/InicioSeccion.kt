@@ -62,24 +62,26 @@ import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.luhikawa.ui.theme.*
 import com.example.luhikawa.R
+import com.example.luhikawa.data.AccountManager
+import com.example.luhikawa.data.StoredAccount
+import com.example.luhikawa.domain.services.AuthService
+import com.example.luhikawa.ui.theme.*
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import java.security.SecureRandom
-import com.example.luhikawa.domain.services.AuthService
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 
 class MainActivityLogin : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            luhikawaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = BgDarka
@@ -96,23 +98,22 @@ class MainActivityLogin : ComponentActivity() {
                         composable("greeting") {
                             Greeting(navController = navController)
                         }
-
                         composable("registro") {
                             RegistroScreen(navController = navController)
-                        }
-                    }
-
                         }
                     }
                 }
             }
         }
+    }
+}
 
 @Composable
 fun LoginScreen(navController: NavController) {
     var usuario by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     val context = LocalContext.current
@@ -120,6 +121,7 @@ fun LoginScreen(navController: NavController) {
     val auth = remember { FirebaseAuth.getInstance() }
     val db = remember { FirebaseFirestore.getInstance() }
     val credentialManager = remember { CredentialManager.create(context) }
+    val accountManager = remember { AccountManager(context) }
 
     val spacingXS = 24.dp
     val spacingS = 80.dp
@@ -127,10 +129,62 @@ fun LoginScreen(navController: NavController) {
     val spacingL = 24.dp
     val spacingXL = 40.dp
 
+    // Función auxiliar para autenticar y guardar localmente
+    fun realizarLogin(emailFinal: String, pass: String) {
+        auth.signInWithEmailAndPassword(emailFinal, pass)
+            .addOnCompleteListener { task ->
+                isLoading = false
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    if (user != null) {
+                        db.collection("users").document(user.uid).get()
+                            .addOnSuccessListener { doc ->
+                                val nombreGuardado = doc.getString("nombreCompleto")
+                                    ?: doc.getString("usuario")
+                                    ?: user.displayName
+                                    ?: emailFinal
+
+                                accountManager.saveAccount(
+                                    StoredAccount(
+                                        uid = user.uid,
+                                        email = emailFinal,
+                                        password = pass,
+                                        displayName = nombreGuardado
+                                    )
+                                )
+                                accountManager.setCurrentAccount(user.uid)
+
+                                Toast.makeText(context, "¡Bienvenida de vuelta!", Toast.LENGTH_SHORT).show()
+                                navController.navigate("greeting") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                            .addOnFailureListener {
+                                accountManager.saveAccount(
+                                    StoredAccount(
+                                        uid = user.uid,
+                                        email = emailFinal,
+                                        password = pass,
+                                        displayName = user.displayName ?: emailFinal
+                                    )
+                                )
+                                accountManager.setCurrentAccount(user.uid)
+
+                                navController.navigate("greeting") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                    }
+                } else {
+                    Toast.makeText(context, "Error de inicio de sesión: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
+                }
+            }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgDarka)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(scrollState)
             .padding(horizontal = 20.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -154,7 +208,7 @@ fun LoginScreen(navController: NavController) {
                 .fillMaxWidth(0.85f)
                 .wrapContentHeight(),
             contentScale = ContentScale.FillWidth,
-            colorFilter = ColorFilter.tint(Color(0xFFC7AF93))
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
         )
 
         Spacer(modifier = Modifier.height(spacingXL))
@@ -164,18 +218,20 @@ fun LoginScreen(navController: NavController) {
             onValueChange = { usuario = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Usuario o email", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Usuario o email", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
             ),
             leadingIcon = {
-                Icon(Icons.Default.Person, contentDescription = "Icono Usuario", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(Icons.Default.Person, contentDescription = "Icono Usuario", tint = MaterialTheme.colorScheme.primary)
             }
         )
 
@@ -186,26 +242,28 @@ fun LoginScreen(navController: NavController) {
             onValueChange = { contrasena = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Contraseña", style = TextStyle(fontFamily = InriaSerif, color = TextBeigea.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Contraseña", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
-            textStyle = TextStyle(fontFamily = InriaSerif, color = TextBeigea, fontSize = 18.sp),
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AccentBordera,
-                unfocusedBorderColor = AccentBordera,
-                cursorColor = BgBeigea
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
             ),
             leadingIcon = {
-                Icon(Icons.Default.Lock, contentDescription = "Icono Contraseña", tint = TextBeigea.copy(alpha = 0.7f))
+                Icon(Icons.Default.Lock, contentDescription = "Icono Contraseña", tint = MaterialTheme.colorScheme.primary)
             },
             trailingIcon = {
                 val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                 val description = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
 
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = description, tint = TextBeigea.copy(alpha = 0.7f))
+                    Icon(imageVector = image, contentDescription = description, tint = MaterialTheme.colorScheme.primary)
                 }
             }
         )
@@ -214,28 +272,49 @@ fun LoginScreen(navController: NavController) {
 
         Button(
             onClick = {
-                if (usuario.isBlank() || contrasena.isBlank()) {
+                val inputUsuario = usuario.trim()
+                val inputPass = contrasena.trim()
+
+                if (inputUsuario.isBlank() || inputPass.isBlank()) {
                     Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
-                auth.signInWithEmailAndPassword(usuario, contrasena)
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            Toast.makeText(context, "¡Bienvenida de vuelta!", Toast.LENGTH_SHORT).show()
-                            navController.navigate("greeting") {
-                                popUpTo("login") { inclusive = true }
+                isLoading = true
+
+                if (!inputUsuario.contains("@")) {
+                    db.collection("users")
+                        .whereEqualTo("usuario", inputUsuario)
+                        .get()
+                        .addOnSuccessListener { querySnapshot ->
+                            if (!querySnapshot.isEmpty) {
+                                val emailEncontrado = querySnapshot.documents[0].getString("email") ?: ""
+                                realizarLogin(emailEncontrado, inputPass)
+                            } else {
+                                isLoading = false
+                                Toast.makeText(context, "Usuario no encontrado", Toast.LENGTH_SHORT).show()
                             }
-                        } else {
-                            Toast.makeText(context, "Error: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
                         }
-                    }
+                        .addOnFailureListener {
+                            isLoading = false
+                            Toast.makeText(context, "Error al verificar usuario", Toast.LENGTH_SHORT).show()
+                        }
+                } else {
+                    realizarLogin(inputUsuario, inputPass)
+                }
             },
+            enabled = !isLoading,
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = BgBeigea, contentColor = TextDarka),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
             shape = RoundedCornerShape(28.dp)
         ) {
-            Text("Inicio de sesión", style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, fontWeight = FontWeight.Bold))
+            Text(
+                if (isLoading) "Cargando..." else "Inicio de sesión",
+                style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+            )
         }
 
         Spacer(modifier = Modifier.height(spacingM))
@@ -247,7 +326,7 @@ fun LoginScreen(navController: NavController) {
             Box(
                 modifier = Modifier
                     .size(50.dp)
-                    .background(BgDarka, shape = CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, shape = CircleShape)
                     .clickable {
                         coroutineScope.launch {
                             try {
@@ -277,6 +356,19 @@ fun LoginScreen(navController: NavController) {
                                     db = db,
                                     context = context,
                                     onSuccess = {
+                                        val user = auth.currentUser
+                                        user?.let {
+                                            accountManager.saveAccount(
+                                                StoredAccount(
+                                                    uid = it.uid,
+                                                    email = it.email ?: "",
+                                                    password = "",
+                                                    displayName = it.displayName ?: it.email ?: ""
+                                                )
+                                            )
+                                            accountManager.setCurrentAccount(it.uid)
+                                        }
+
                                         navController.navigate("greeting") {
                                             popUpTo("login") { inclusive = true }
                                         }
@@ -303,7 +395,7 @@ fun LoginScreen(navController: NavController) {
 
         Text(
             text = "¿Olvidaste tu contraseña?",
-            style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, color = TextBeigea.copy(alpha = 0.8f), textAlign = TextAlign.Center)
+            style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f), textAlign = TextAlign.Center)
         )
 
         Spacer(modifier = Modifier.height(spacingXS))
@@ -311,7 +403,7 @@ fun LoginScreen(navController: NavController) {
         Text(
             text = "Registrate",
             style = TextStyle(
-                fontFamily = InriaSerif, fontSize = 18.sp, color = TextBeigea,
+                fontFamily = InriaSerif, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline, textAlign = TextAlign.Center
             ),
             modifier = Modifier.clickable {
@@ -320,6 +412,5 @@ fun LoginScreen(navController: NavController) {
         )
 
         Spacer(modifier = Modifier.height(spacingL))
-
     }
 }

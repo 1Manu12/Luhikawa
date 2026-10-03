@@ -1,15 +1,18 @@
 package com.example.luhikawa.ui.HomeComponents
 
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,6 +44,7 @@ import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -51,7 +56,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -59,16 +66,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import com.example.luhikawa.R
+import com.example.luhikawa.data.AccountManager
+import com.example.luhikawa.data.switchNextAccount
+import com.example.luhikawa.ui.theme.AccentAzulMarino
+import com.example.luhikawa.ui.theme.AccentBlanco
 import com.example.luhikawa.ui.theme.AccentBordera
 import com.example.luhikawa.ui.theme.AccentColor32
+import com.example.luhikawa.ui.theme.AccentDorado
+import com.example.luhikawa.ui.theme.AccentGrisTitanio
+import com.example.luhikawa.ui.theme.AccentMarron
+import com.example.luhikawa.ui.theme.AccentVerdeAmarillito
+import com.example.luhikawa.ui.theme.AccentVerdeEsmeralda
+import com.example.luhikawa.ui.theme.AccentVinoTinto
+import com.example.luhikawa.ui.theme.AppTheme
 import com.example.luhikawa.ui.theme.BackgroundColor
 import com.example.luhikawa.ui.theme.BgBeigea
 import com.example.luhikawa.ui.theme.BgDarka
 import com.example.luhikawa.ui.theme.InriaSerif
 import com.example.luhikawa.ui.theme.TextBeigea
 import com.example.luhikawa.ui.theme.TextDarka
-import com.example.luhikawa.R
-
 
 @Composable
 fun RectanguloConImagen() {
@@ -76,7 +93,7 @@ fun RectanguloConImagen() {
         modifier = Modifier
             .fillMaxWidth()
             .height(65.dp)
-            .background(AccentColor32),
+            .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -100,11 +117,11 @@ fun EtiquetaTexto(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected || isPressed) AccentColor32 else BackgroundColor,
+        targetValue = if (isSelected || isPressed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.background,
         label = "fondoAnimado"
     )
     val textColor by animateColorAsState(
-        targetValue = if (isSelected || isPressed) BackgroundColor else AccentColor32,
+        targetValue = if (isSelected || isPressed) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
         label = "textoAnimado"
     )
 
@@ -114,7 +131,7 @@ fun EtiquetaTexto(
             .background(backgroundColor)
             .border(
                 width = 2.dp,
-                color = AccentColor32,
+                color = MaterialTheme.colorScheme.primary,
                 shape = RoundedCornerShape(16.dp)
             )
             .clickable(
@@ -151,7 +168,7 @@ fun ImagenDerechaTextoIzquierda() {
                 style = TextStyle(
                     fontFamily = InriaSerif,
                     fontSize = 22.sp,
-                    color = TextBeigea,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold,
                     lineHeight = 22.sp
                 )
@@ -179,8 +196,8 @@ fun RectanguloCompletadoPapelera(
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .height(60.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(BackgroundColor)
-            .border(1.dp, Color(0xFFC7AF93), RoundedCornerShape(22.dp))
+            .background(MaterialTheme.colorScheme.background)
+            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(22.dp))
             .clickable { onClick() },
         contentAlignment = Alignment.CenterStart
     ) {
@@ -193,7 +210,7 @@ fun RectanguloCompletadoPapelera(
         ) {
             Text(
                 text = textoTarea,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 fontFamily = InriaSerif,
                 fontSize = 18.sp,
                 modifier = Modifier.weight(1f)
@@ -203,7 +220,7 @@ fun RectanguloCompletadoPapelera(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Eliminar",
-                    tint = Color(0xFFE57373)
+                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
@@ -216,7 +233,7 @@ fun HeaderSection() {
         modifier = Modifier
             .fillMaxWidth()
             .height(65.dp)
-            .background(BgBeigea)
+            .background(MaterialTheme.colorScheme.primary)
             .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
@@ -238,7 +255,7 @@ fun NuevoRecordatorioHeader(isEditing: Boolean = false) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(BgBeigea)
+            .background(MaterialTheme.colorScheme.primary)
             .padding(vertical = 16.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -248,7 +265,7 @@ fun NuevoRecordatorioHeader(isEditing: Boolean = false) {
                 fontFamily = InriaSerif,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextDarka
+                color = MaterialTheme.colorScheme.onPrimary
             )
         )
     }
@@ -261,7 +278,7 @@ fun InputLabel(text: String) {
         style = TextStyle(
             fontFamily = InriaSerif,
             fontSize = 16.sp,
-            color = TextBeigea.copy(alpha = 0.8f)
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
         )
     )
 }
@@ -281,27 +298,27 @@ fun OutlinedTextFieldCustom(
                 text = placeholder,
                 style = TextStyle(
                     fontFamily = InriaSerif,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                 )
             )
         },
         textStyle = TextStyle(
             fontFamily = InriaSerif,
-            color = TextBeigea,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 18.sp
         ),
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = AccentBordera,
-            unfocusedBorderColor = AccentBordera,
-            cursorColor = BgBeigea
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            cursorColor = MaterialTheme.colorScheme.primary
         ),
         trailingIcon = {
             Icon(
                 imageVector = Icons.Default.Edit,
                 contentDescription = "Editar",
-                tint = AccentBordera,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -328,9 +345,9 @@ fun IconSelector(selectedIndex: Int, onIconSelected: (Int) -> Unit) {
                 modifier = Modifier
                     .size(50.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) BgBeigea else Color.Transparent)
+                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                     .border(
-                        BorderStroke(1.dp, AccentBordera),
+                        BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     )
                     .clickable { onIconSelected(index) },
@@ -339,7 +356,7 @@ fun IconSelector(selectedIndex: Int, onIconSelected: (Int) -> Unit) {
                 Icon(
                     imageVector = icon,
                     contentDescription = "Icono $index",
-                    tint = if (isSelected) BgDarka else TextBeigea,
+                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(26.dp)
                 )
             }
@@ -357,7 +374,7 @@ fun ImportanceSelector(
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                BorderStroke(1.dp, AccentBordera),
+                BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp)
             )
     ) {
@@ -367,7 +384,7 @@ fun ImportanceSelector(
                 modifier = Modifier
                     .weight(1f)
                     .background(
-                        if (isSelected) BgBeigea else Color.Transparent,
+                        if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                         shape = when (text) {
                             "Baja" -> RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)
                             "Alta" -> RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
@@ -384,7 +401,7 @@ fun ImportanceSelector(
                         fontFamily = InriaSerif,
                         fontSize = 16.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) BgDarka else TextBeigea
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground
                     )
                 )
             }
@@ -402,7 +419,7 @@ fun DateTimeSelector(
         modifier = modifier
             .height(50.dp)
             .border(
-                BorderStroke(1.dp, AccentBordera),
+                BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(horizontal = 12.dp),
@@ -411,7 +428,7 @@ fun DateTimeSelector(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = AccentBordera,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -420,7 +437,7 @@ fun DateTimeSelector(
             style = TextStyle(
                 fontFamily = InriaSerif,
                 fontSize = 15.sp,
-                color = TextBeigea
+                color = MaterialTheme.colorScheme.onBackground
             )
         )
     }
@@ -444,9 +461,9 @@ fun IndexStyleCategorySelector(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(14.dp))
-                    .background(if (isSelected) BgBeigea else Color.Transparent)
+                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                     .border(
-                        BorderStroke(1.dp, AccentBordera),
+                        BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(14.dp)
                     )
                     .clickable { onCategorySelected(category) }
@@ -459,7 +476,7 @@ fun IndexStyleCategorySelector(
                         fontFamily = InriaSerif,
                         fontSize = 13.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) BgDarka else TextBeigea
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground
                     )
                 )
             }
@@ -477,7 +494,7 @@ fun FrequencySelector(
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                BorderStroke(1.dp, AccentBordera),
+                BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp)
             )
     ) {
@@ -487,7 +504,7 @@ fun FrequencySelector(
                 modifier = Modifier
                     .weight(1f)
                     .background(
-                        if (isSelected) BgBeigea else Color.Transparent,
+                        if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                         shape = when (text) {
                             "Todos los días" -> RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)
                             "Cada dos semanas" -> RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
@@ -504,7 +521,7 @@ fun FrequencySelector(
                         fontFamily = InriaSerif,
                         fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) BgDarka else TextBeigea
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground
                     ),
                     maxLines = 1
                 )
@@ -512,19 +529,24 @@ fun FrequencySelector(
         }
     }
 }
+
 @Composable
 fun ParteAbajo(navController: NavController) {
     val currentRoute = navController.currentBackStackEntry?.destination?.route
+    val context = LocalContext.current
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val iconColor = MaterialTheme.colorScheme.primary
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(BgDarka)
-            .padding(vertical = 16.dp, horizontal = 1.dp),
+            .background(backgroundColor) // Mismo tono oscuro sin contraste
+            .padding(vertical = 12.dp, horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 1. CALENDARIO
+    )
+    {
+// CALENDARIO
         BottomNavItem(
             icon = Icons.Default.CalendarMonth,
             contentDescription = "Calendario",
@@ -540,7 +562,7 @@ fun ParteAbajo(navController: NavController) {
             }
         )
 
-        // 2. IA
+// IA
         BottomNavItem(
             icon = Icons.Default.AutoAwesome,
             contentDescription = "IA",
@@ -555,8 +577,7 @@ fun ParteAbajo(navController: NavController) {
                 }
             }
         )
-
-        // 3. RECORDATORIO (Botón central)
+// RECORDATORIO
         Box(
             modifier = Modifier
                 .size(56.dp)
@@ -573,7 +594,7 @@ fun ParteAbajo(navController: NavController) {
                     }
                 }
         )
-
+// HOME / AGENDA
         BottomNavItem(
             icon = Icons.Default.Home,
             contentDescription = "Agenda",
@@ -585,32 +606,55 @@ fun ParteAbajo(navController: NavController) {
                 }
             }
         )
-//Perfil
-        BottomNavItem(
-            icon = Icons.Default.PersonOutline,
-            contentDescription = "Perfil",
-            tint = Color.White,
-            onClick = {
-                val currentRoute = navController.currentBackStackEntry?.destination?.route
-
-                if (currentRoute != "perfil") {
-                    navController.navigate("perfil") {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+// PERFIL
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .pointerInput(navController) {
+                    detectTapGestures(
+                        onTap = {
+                            val route = navController.currentBackStackEntry?.destination?.route
+                            if (route != "perfil") {
+                                navController.navigate("perfil") {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        },
+                        onDoubleTap = {
+                            Log.d("DOUBLE_TAP", "¡Doble toque detectado!")
+                            switchNextAccount(
+                                context = context,
+                                accountManager = AccountManager(context),
+                                navController = navController,
+                                onSuccess = {
+                                    navController.navigate("greeting") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            )
                         }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            }
-        )
+                    )
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.PersonOutline,
+                contentDescription = "Perfil",
+                tint = Color.White
+            )
+        }
     }
 }
+
 @Composable
 fun BottomNavItem(
     icon: ImageVector,
     contentDescription: String,
-    tint: Color = TextBeigea,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
     Icon(
@@ -622,6 +666,7 @@ fun BottomNavItem(
             .clickable(onClick = onClick)
     )
 }
+
 fun getIconFromIndex(index: Int): ImageVector {
     return when (index) {
         0 -> Icons.Default.Home
@@ -633,6 +678,67 @@ fun getIconFromIndex(index: Int): ImageVector {
         else -> Icons.Default.CheckCircle
     }
 }
+
+@Composable
+fun ThemeSelectorHome(
+    currentTheme: AppTheme,
+    onThemeSelected: (AppTheme) -> Unit
+) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(
+            text = "Selecciona tu tema",
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(AppTheme.values()) { theme ->
+                if (theme != AppTheme.SYSTEM) {
+                    ThemeCircle(
+                        theme = theme,
+                        isSelected = theme == currentTheme,
+                        onClick = { onThemeSelected(theme) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeCircle(
+    theme: AppTheme,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val previewColor = when (theme) {
+        AppTheme.BEIGE -> Color(0xFFC7AF93)
+        AppTheme.DORADO -> AccentDorado
+        AppTheme.MARRON -> AccentMarron
+        AppTheme.BLANCO -> AccentBlanco
+        AppTheme.VERDE_ESMERALDA -> AccentVerdeEsmeralda
+        AppTheme.VERDE_AMARILLITO -> AccentVerdeAmarillito
+        AppTheme.AZUL_MARINO -> AccentAzulMarino
+        AppTheme.VINO_TINTO -> AccentVinoTinto
+        AppTheme.GRIS_TITANIO -> AccentGrisTitanio
+        else -> MaterialTheme.colorScheme.primary
+    }
+
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .background(previewColor, CircleShape)
+            .border(
+                width = if (isSelected) 3.dp else 1.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.onBackground else Color.Transparent,
+                shape = CircleShape
+            )
+            .clickable { onClick() }
+    )
+}
+
 sealed class Screen(val route: String) {
     object Greeting : Screen("greeting")
     object Login : Screen("login")
