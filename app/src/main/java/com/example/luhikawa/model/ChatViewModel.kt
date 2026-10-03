@@ -1,4 +1,4 @@
-/*package com.example.luhikawa.model
+package com.example.luhikawa.model
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,6 +16,7 @@ data class MensajeChat(
     val mensaje: String,
     val deUsuario: Boolean
 )
+
 data class EstadoChat(
     val mensajes: List<MensajeChat> = listOf(
         MensajeChat("¡Hola! Soy Luhi, tu asistente personal. ¿En qué puedo ayudarte hoy?", deUsuario = false)
@@ -95,7 +96,7 @@ class ChatViewModel : ViewModel() {
             } catch (e: Exception) {
                 _estado.value = _estado.value.copy(
                     mensajes = _estado.value.mensajes + MensajeChat(
-                        "Error al conectar con Luhi}",
+                        "Error al conectar con Luhi",
                         deUsuario = false
                     ),
                     cargando = false
@@ -107,7 +108,6 @@ class ChatViewModel : ViewModel() {
     private suspend fun procesarComandosCrud(textoOriginal: String): String {
         var textoResultado = textoOriginal
 
-        // 1. Crear Tarea
         if (textoResultado.contains("ACCION_CREAR:")) {
             val titulo = extraerValor(textoResultado, "title")
             val categoria = extraerValor(textoResultado, "category").ifBlank { "Personal" }
@@ -117,7 +117,6 @@ class ChatViewModel : ViewModel() {
             textoResultado = textoResultado.substringBefore("ACCION_CREAR:").trim()
         }
 
-        // 2. Completar Tarea
         if (textoResultado.contains("ACCION_COMPLETAR:")) {
             val titulo = extraerValor(textoResultado, "title")
             if (titulo.isNotBlank()) {
@@ -126,7 +125,6 @@ class ChatViewModel : ViewModel() {
             textoResultado = textoResultado.substringBefore("ACCION_COMPLETAR:").trim()
         }
 
-        // 3. Eliminar Tarea
         if (textoResultado.contains("ACCION_ELIMINAR:")) {
             val titulo = extraerValor(textoResultado, "title")
             if (titulo.isNotBlank()) {
@@ -208,4 +206,4 @@ class ChatViewModel : ViewModel() {
             "No pude consultar las tareas."
         }
     }
-}*/
+}
