@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,14 +17,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,21 +46,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.luhikawa.R
+import com.example.luhikawa.model.ChatViewModel
 
-import com.example.luhikawa.ui.theme.luhikawaTheme
+val BgDark3 = Color(0xFF1A1717)
+val BgBeige3 = Color(0xFFC7AF93)
+val TextBeige3 = Color(0xFFC7AF93)
+val TextDark3 = Color(0xFF1A1717)
+val AccentColor32 = Color(0xFFC7AF93)
 
 class MainActivityIA : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            luhikawaTheme {
+            MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = BgDark3
                 ) {
                     AiScreen()
                 }
@@ -57,197 +75,161 @@ class MainActivityIA : ComponentActivity() {
 }
 
 @Composable
-fun AiScreen() {
+fun AiScreen(
+    viewModel: ChatViewModel = viewModel()
+) {
+    val estado by viewModel.estado.collectAsState()
+    var textoEntrada by remember { mutableStateOf("") }
+    val estadoLista = rememberLazyListState()
+
+    // Desplazamiento automático al mensaje más reciente
+    LaunchedEffect(estado.mensajes.size) {
+        if (estado.mensajes.isNotEmpty()) {
+            estadoLista.animateScrollToItem(estado.mensajes.size - 1)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 20.dp),
+            .background(BgDark3)
+        ,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.weight(1f)
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
-
             RectanguloConImagen2()
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
-            ) {
-                Text(
-                    text = "AI",
-                    style = TextStyle(
-                        fontFamily = FontFamily.Serif,
-                        fontSize = 32.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Card(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                ) {
-                    Text(
-                        text = "¡Hola! Soy tu asistente de IA luhikawa. ¿En qué puedo ayudarte hoy?",
-                        modifier = Modifier.padding(14.dp),
-                        style = TextStyle(
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Spacer(modifier = Modifier.width(40.dp))
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                ) {
-                    Text(
-                        text = "Dime cómo mejorar mi presentación...",
-                        modifier = Modifier.padding(14.dp),
-                        style = TextStyle(
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                }
-            }
-
             Spacer(modifier = Modifier.height(20.dp))
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom
+            LazyColumn(
+                state = estadoLista,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Spacer(modifier = Modifier.weight(1f))
+                items(estado.mensajes) { msg ->
+                    if (msg.deUsuario) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Spacer(modifier = Modifier.width(40.dp))
+                            Card(
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = BgBeige3)
+                            ) {
+                                Text(
+                                    text = msg.mensaje,
+                                    modifier = Modifier.padding(14.dp),
+                                    style = TextStyle(
+                                        fontFamily = FontFamily.Serif,
+                                        fontSize = 14.sp,
+                                        color = TextDark3
+                                    )
+                                )
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+
+                            Card(
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = BgBeige3)
+                            ) {
+                                Text(
+                                    text = msg.mensaje,
+                                    modifier = Modifier.padding(14.dp),
+                                    style = TextStyle(
+                                        fontFamily = FontFamily.Serif,
+                                        fontSize = 14.sp,
+                                        color = TextDark3
+                                    )
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(40.dp))
+                        }
+                    }
+                }
+
+
+                if (estado.cargando) {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = TextBeige3,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 12.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                colors = CardDefaults.cardColors(containerColor = BgBeige3)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Escribe un mensaje...",
-                        style = TextStyle(
-                            fontFamily = FontFamily.Serif,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        )
+                    TextField(
+                        value = textoEntrada,
+                        onValueChange = { textoEntrada = it },
+                        placeholder = {
+                            Text(
+                                text = "Escribe un mensaje...",
+                                style = TextStyle(
+                                    fontFamily = FontFamily.Serif,
+                                    fontSize = 14.sp,
+                                    color = TextDark3.copy(alpha = 0.7f)
+                                )
+                            )
+                        },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = TextDark3,
+                            unfocusedTextColor = TextDark3
+                        ),
+                        modifier = Modifier.weight(1f)
                     )
+
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.send_24),
                         contentDescription = "Enviar",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+                        tint = TextDark3,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                if (textoEntrada.isNotBlank()) {
+                                    viewModel.enviarMensaje(textoEntrada)
+                                    textoEntrada = ""
+                                }
+                            }
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun BottomNavItem(
-    icon: ImageVector,
-    label: String,
-    isSelected: Boolean
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = label,
-            style = TextStyle(
-                fontSize = 10.sp,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-            )
-        )
-    }
-}
-
-@Composable
-fun AportacionCard(
-    title: String,
-    icon: ImageVector,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ),
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = title,
-                style = TextStyle(
-                    fontFamily = FontFamily.Serif,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold
-                ),
-                modifier = Modifier.weight(1f)
-            )
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
         }
     }
 }
@@ -258,7 +240,7 @@ fun RectanguloConImagen2() {
         modifier = Modifier
             .fillMaxWidth()
             .height(65.dp)
-            .background(MaterialTheme.colorScheme.primary),
+            .background(AccentColor32),
         contentAlignment = Alignment.Center
     ) {
         Image(
