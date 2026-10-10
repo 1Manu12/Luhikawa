@@ -1,9 +1,11 @@
 package com.example.luhikawa.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.animateFloatAsState
@@ -11,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,6 +41,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -81,6 +86,7 @@ import com.example.luhikawa.ui.HomeComponents.getIconFromIndex
 import com.example.luhikawa.ui.theme.luhikawaTheme
 import java.util.Calendar
 import java.util.TimeZone
+import androidx.compose.runtime.saveable.rememberSaveable
 
 val InriaSerif = FontFamily(
     Font(R.font.inriaserif_regular)
@@ -153,6 +159,26 @@ fun Greeting(
         "Lista de deseos",
         "Cumpleaños"
     )
+
+    val frasesMotivacionales = listOf(
+        "Un pequeño paso hoy es un gran logro mañana, así que da el primero sin miedo.",
+        "Tú puedes con todo lo que te propongas, solo recuerda avanzar un paso a la vez.",
+        "Hazlo con calma, pero hazlo: la constancia siempre le gana a la prisa.",
+        "Cada tarea completada es una victoria, por pequeña que parezca. ¡Celébrala!",
+        "Hoy es un buen día para empezar eso que tanto has estado dejando para después.",
+        "No tienes que ser perfecta, solo constante. Lo que haces hoy suma mucho.",
+        "Lo importante es avanzar, aunque sea despacito, porque cada paso te acerca a tu meta.",
+        "Tu esfuerzo de hoy será tu orgullo de mañana, así que sigue adelante con confianza.",
+        "Respira hondo, organiza tus ideas y sigue adelante: ya lograste cosas más difíciles.",
+        "Eres más capaz de lo que imaginas, y cada día demuestras lo fuerte que eres."
+    )
+
+
+
+    val fraseDelDia = rememberSaveable { frasesMotivacionales.random() }
+    val prefs = remember { context.getSharedPreferences("luhikawa_prefs", Context.MODE_PRIVATE) }
+    var frasesActivas by remember { mutableStateOf(prefs.getBoolean("frases_activas", true)) }
+    var showMenuFrases by remember { mutableStateOf(false) }
 
     var listaDeTareas by remember {
         mutableStateOf<List<Pair<String, Map<String, Any>>>>(emptyList())
@@ -411,7 +437,47 @@ fun Greeting(
                 }
 
                 // Imagen y texto inferior (Gato)
-                ImagenDerechaTextoIzquierda()
+                // Mantén presionado para activar/desactivar las frases motivacionales
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerInput(Unit) {
+                            detectTapGestures(onLongPress = { showMenuFrases = true })
+                        }
+                ) {
+                    if (frasesActivas) {
+                        ImagenDerechaTextoIzquierda(frase = fraseDelDia)
+                    } else {
+                        ImagenDerechaTextoIzquierda() // usa la frase original por defecto
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenuFrases,
+                        onDismissRequest = { showMenuFrases = false },
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = if (frasesActivas) "Desactivar frases motivacionales"
+                                    else "Activar frases motivacionales",
+                                    fontFamily = InriaSerif,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            },
+                            onClick = {
+                                frasesActivas = !frasesActivas
+                                prefs.edit().putBoolean("frases_activas", frasesActivas).apply()
+                                showMenuFrases = false
+                                Toast.makeText(
+                                    context,
+                                    if (frasesActivas) "Frases activadas" else "Frases desactivadas",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+                    }
+                }
             }
 
             if (showDatePicker) {

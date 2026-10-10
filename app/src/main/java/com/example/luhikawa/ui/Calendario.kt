@@ -49,6 +49,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.luhikawa.data.TaskRepository
 import com.example.luhikawa.ui.HomeComponents.RectanguloConImagen
+import com.example.luhikawa.ui.mode.ModeViewModel          // MODO
+import com.example.luhikawa.ui.mode.config                 // MODO
+import com.example.luhikawa.ui.mode.rememberModeViewModel  // MODO
 import com.example.luhikawa.ui.theme.InriaSerif
 import com.example.luhikawa.ui.theme.luhikawaTheme
 import com.google.firebase.auth.FirebaseAuth
@@ -100,7 +103,13 @@ class MainActivityCalendar : ComponentActivity() {
 }
 
 @Composable
-fun CalendarScreen(navController: NavController) {
+fun CalendarScreen(
+    navController: NavController,
+    modeViewModel: ModeViewModel = rememberModeViewModel()   // MODO: opcional
+) {
+    val modo = modeViewModel.mode                            // MODO
+    val config = modo.config()                               // MODO
+
     val context = LocalContext.current
     val db = remember { FirebaseFirestore.getInstance() }
     val auth = remember { FirebaseAuth.getInstance() }
@@ -134,10 +143,12 @@ fun CalendarScreen(navController: NavController) {
 
     LaunchedEffect(auth.currentUser?.uid) { cargarTareas() }
 
-    val tareasPendientes = remember(tareas) {
+    // MODO: solo pendientes del modo actual (las viejas sin "mode" cuentan como "tareas")
+    val tareasPendientes = remember(tareas, modo) {
         tareas.filter { tarea ->
             val completada = tarea["completed"] as? Boolean ?: false
-            !completada
+            val modoTarea = (tarea["mode"] as? String)?.ifBlank { null } ?: "tareas"
+            !completada && modoTarea == modo.key
         }
     }
 
@@ -156,7 +167,10 @@ fun CalendarScreen(navController: NavController) {
     @Composable
     fun colorParaFecha(fecha: LocalDate): Color? {
         val tareasDelDia = tareasPorFecha[fecha] ?: return null
-        val maxImportante = tareasDelDia.any { it["important"] as? Boolean == true }
+        // MODO: RecordatorioScreen guarda "importance" ("Alta/Media/Baja"), no "important"
+        val maxImportante = tareasDelDia.any {
+            it["important"] as? Boolean == true || it["importance"] == "Alta"
+        }
         return if (maxImportante) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary
     }
 
@@ -178,7 +192,6 @@ fun CalendarScreen(navController: NavController) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Todo el contenido está dentro de un LazyColumn para permitir desplazamiento vertical completo
         LazyColumn(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -301,7 +314,7 @@ fun CalendarScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        "Tareas asignadas",
+                        config.tituloLista,   // MODO (antes: "Tareas asignadas")
                         style = TextStyle(
                             fontFamily = InriaSerif,
                             fontSize = 20.sp,
@@ -318,8 +331,8 @@ fun CalendarScreen(navController: NavController) {
                 item {
                     Text(
                         text = if (fechaSeleccionada == null)
-                            "Toca una fecha para ver sus tareas"
-                        else "No hay tareas para este día",
+                            "Toca una fecha para ver sus registros"
+                        else config.textoSinItems,   // MODO
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                         fontFamily = InriaSerif,
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
@@ -334,14 +347,18 @@ fun CalendarScreen(navController: NavController) {
                     val importante = tarea["important"] as? Boolean == true
                     val iconIndex = (tarea["icon"] as? Long)?.toInt() ?: 0
                     val id = tarea["taskId"] as? String
+                    val monto = (tarea["amount"] as? Number)?.toDouble()   // MODO
 
                     val infoTiempo = buildString {
                         if (fechaLegible.isNotEmpty()) append(fechaLegible)
                         if (fechaLegible.isNotEmpty() && horaFormateada.isNotEmpty()) append(" • ")
                         if (horaFormateada.isNotEmpty()) append(horaFormateada)
                     }
-                    val textoConFecha =
+                    val textoBase =
                         if (infoTiempo.isNotEmpty()) "$titulo - $infoTiempo" else titulo
+                    // MODO: en microfinanzas se muestra el monto
+                    val textoConFecha =
+                        if (monto != null) "$textoBase • \$%,.2f".format(monto) else textoBase
 
                     Box(
                         modifier = Modifier
@@ -377,7 +394,10 @@ fun CalendarScreen(navController: NavController) {
                                     }
                                 }
                             },
-                            onClick = {}
+                            onClick = {
+                                // MODO: tocar abre la edición
+                                if (id != null) navController.navigate("recordatorio?taskId=$id")
+                            }
                         )
                     }
                 }

@@ -148,7 +148,9 @@ fun EtiquetaTexto(
 }
 
 @Composable
-fun ImagenDerechaTextoIzquierda() {
+fun ImagenDerechaTextoIzquierda(
+    frase: String = "Tómate tu tiempo.\nEl descanso también es productivo"
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -160,7 +162,7 @@ fun ImagenDerechaTextoIzquierda() {
             modifier = Modifier.width(180.dp)
         ) {
             Text(
-                text = "Tómate tu tiempo.\nEl descanso también es productivo",
+                text = frase,
                 style = TextStyle(
                     fontFamily = InriaSerif,
                     fontSize = 22.sp,
@@ -223,30 +225,12 @@ fun RectanguloCompletadoPapelera(
     }
 }
 
-@Composable
-fun HeaderSection() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(65.dp)
-            .background(MaterialTheme.colorScheme.primary)
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.logolk),
-            contentDescription = "Logo LK",
-            modifier = Modifier
-                .size(90.dp)
-                .padding(end = 4.dp),
-            contentScale = ContentScale.Fit
-        )
-    }
-}
 
 @Composable
-fun NuevoRecordatorioHeader(isEditing: Boolean = false) {
+fun NuevoRecordatorioHeader(
+    isEditing: Boolean = false,
+    tituloNuevo: String = "NUEVO RECORDATORIO"
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -256,7 +240,7 @@ fun NuevoRecordatorioHeader(isEditing: Boolean = false) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = if (isEditing) "EDITAR RECORDATORIO" else "NUEVO RECORDATORIO",
+            text = if (isEditing) "EDITAR RECORDATORIO" else tituloNuevo,
             style = TextStyle(
                 fontFamily = InriaSerif,
                 fontSize = 24.sp,
@@ -279,47 +263,6 @@ fun InputLabel(text: String) {
     )
 }
 
-@Composable
-fun OutlinedTextFieldCustom(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth(),
-        placeholder = {
-            Text(
-                text = placeholder,
-                style = TextStyle(
-                    fontFamily = InriaSerif,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                )
-            )
-        },
-        textStyle = TextStyle(
-            fontFamily = InriaSerif,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 18.sp
-        ),
-        singleLine = true,
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            cursorColor = MaterialTheme.colorScheme.primary
-        ),
-        trailingIcon = {
-            Icon(
-                imageVector = Icons.Default.Edit,
-                contentDescription = "Editar",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    )
-}
 
 @Composable
 fun IconSelector(selectedIndex: Int, onIconSelected: (Int) -> Unit) {
@@ -439,13 +382,14 @@ fun DateTimeSelector(
     }
 }
 
+val CategoriasTareas = listOf("Trabajo", "Estudio", "Hábitos", "Personal", "Lista de deseos", "Cumpleaños")
+
 @Composable
 fun IndexStyleCategorySelector(
     selectedCategory: String,
-    onCategorySelected: (String) -> Unit
+    onCategorySelected: (String) -> Unit,
+    categories: List<String> = CategoriasTareas
 ) {
-    val categories = listOf("Trabajo", "Estudio", "Hábitos", "Personal", "Lista de deseos", "Cumpleaños")
-
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -479,7 +423,6 @@ fun IndexStyleCategorySelector(
         }
     }
 }
-
 @Composable
 fun FrequencySelector(
     selectedOption: String,

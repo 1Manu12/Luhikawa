@@ -1,7 +1,6 @@
 package com.example.luhikawa.ui
 
 import android.app.TimePickerDialog
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -11,7 +10,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.BorderStroke
@@ -107,10 +105,13 @@ import com.example.luhikawa.R
 import com.example.luhikawa.data.AccountManager
 import com.example.luhikawa.data.StoredAccount
 import com.example.luhikawa.data.UserRepository
-import com.example.luhikawa.ui.HomeComponents.HeaderSection
 import com.example.luhikawa.ui.HomeComponents.ParteAbajo
 import com.example.luhikawa.ui.HomeComponents.RectanguloConImagen
 import com.example.luhikawa.ui.components.SeccionCambiarTema
+import com.example.luhikawa.ui.mode.AppMode
+import com.example.luhikawa.ui.mode.ModeViewModel
+import com.example.luhikawa.ui.mode.config
+import com.example.luhikawa.ui.mode.rememberModeViewModel
 import com.example.luhikawa.ui.theme.InriaSerif
 import com.example.luhikawa.ui.theme.ThemeViewModel
 import com.example.luhikawa.ui.theme.luhikawaTheme
@@ -149,6 +150,12 @@ class MainActivityPerfil : FragmentActivity() {
 
             val themeViewModel: ThemeViewModel = viewModel(key = currentUsersId)
 
+            // MODO: un solo ViewModel compartido por todas las pantallas
+            val modeViewModel: ModeViewModel = viewModel(
+                key = "mode_$currentUsersId",
+                factory = ModeViewModel.factory(application, currentUsersId)
+            )
+
             LaunchedEffect(currentUsersId) {
                 themeViewModel.setUser(currentUsersId)
             }
@@ -180,12 +187,20 @@ class MainActivityPerfil : FragmentActivity() {
                             composable("perfil") {
                                 PerfilScreen(
                                     navController = navController,
-                                    themeViewModel = themeViewModel
+                                    themeViewModel = themeViewModel,
+                                    modeViewModel = modeViewModel
                                 )
                             }
 
-                            composable("calendario") { CalendarScreen(navController = navController) }
-                            composable("ia") { AiScreen() }
+                            composable("calendario") {
+                                CalendarScreen(
+                                    navController = navController,
+                                    modeViewModel = modeViewModel
+                                )
+                            }
+
+                            composable("ia") { AiScreen(modo = modeViewModel.mode) }
+
                             composable(
                                 route = "recordatorio?taskId={taskId}",
                                 arguments = listOf(
@@ -196,8 +211,14 @@ class MainActivityPerfil : FragmentActivity() {
                                     }
                                 )
                             ) { backStackEntry ->
+                                // Ignora el placeholder literal "{taskId}" del botón central
                                 val taskId = backStackEntry.arguments?.getString("taskId")
-                                RecordatorioScreen(navController = navController, taskId = taskId)
+                                    ?.takeUnless { it.isBlank() || it == "{taskId}" }
+                                RecordatorioScreen(
+                                    navController = navController,
+                                    taskId = taskId,
+                                    modeViewModel = modeViewModel
+                                )
                             }
                         }
                     }
@@ -259,6 +280,7 @@ fun solicitarHuellaDigital(
 fun PerfilScreen(
     navController: NavController,
     themeViewModel: ThemeViewModel = viewModel(),
+    modeViewModel: ModeViewModel = rememberModeViewModel(),
     userRepository: UserRepository = remember { UserRepository() }
 ) {
     val context = LocalContext.current
@@ -280,7 +302,6 @@ fun PerfilScreen(
     var showEditarCuentaDialog by remember { mutableStateOf(false) }
     var showCambiarPasswordDialog by remember { mutableStateOf(false) }
 
-    var showHistorial by remember { mutableStateOf(false) }
     var showPreferencias by remember { mutableStateOf(false) }
 
     var horaNotificacion by remember { mutableStateOf(8) }
@@ -293,30 +314,14 @@ fun PerfilScreen(
     var passActual by remember { mutableStateOf("") }
     var nuevaPass by remember { mutableStateOf("") }
 
-    // ---------- Modo de la aplicación (hogar / microfinanzas) ----------
-    val appPrefs = remember {
-        context.getSharedPreferences("luhikawa_prefs", Context.MODE_PRIVATE)
-    }
-    val uidModo = currentUser?.uid ?: selectedUid ?: "guest"
+    // ---------- Modo de la aplicación ----------
+    val modoApp = modeViewModel.mode
 
-    var modoApp by remember(uidModo) {
-        mutableStateOf(appPrefs.getString("modo_app_$uidModo", "tareas") ?: "tareas")
+    fun cambiarModo(nuevoModo: AppMode) {
+        modeViewModel.cambiarModo(nuevoModo)
+        Toast.makeText(context, nuevoModo.config().toastCambioModo, Toast.LENGTH_SHORT).show()
     }
-
-    fun cambiarModo(nuevoModo: String) {
-        modoApp = nuevoModo
-        appPrefs.edit().putString("modo_app_$uidModo", nuevoModo).apply()
-        Toast.makeText(
-            context,
-            when (nuevoModo) {
-                "tareas" -> "Modo tareas activado"
-                "hogar" -> "Modo hogar activado"
-                else -> "Modo microfinanzas activado"
-            },
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-    // -------------------------------------------------------------------
+    // -------------------------------------------
 
     val activeStoredAccount = remember(cuentasGuardadas, selectedUid, currentUser) {
         cuentasGuardadas.find { it.uid == selectedUid }
@@ -585,8 +590,8 @@ fun PerfilScreen(
                             ModoOptionButton(
                                 text = "Cambiar a modo tareas (predeterminado)",
                                 icon = Icons.Default.CheckCircle,
-                                seleccionado = modoApp == "tareas",
-                                onClick = { cambiarModo("tareas") }
+                                seleccionado = modoApp == AppMode.TAREAS,
+                                onClick = { cambiarModo(AppMode.TAREAS) }
                             )
 
                             Spacer(modifier = Modifier.height(10.dp))
@@ -594,8 +599,8 @@ fun PerfilScreen(
                             ModoOptionButton(
                                 text = "Cambiar a modo hogar",
                                 icon = Icons.Default.Home,
-                                seleccionado = modoApp == "hogar",
-                                onClick = { cambiarModo("hogar") }
+                                seleccionado = modoApp == AppMode.HOGAR,
+                                onClick = { cambiarModo(AppMode.HOGAR) }
                             )
 
                             Spacer(modifier = Modifier.height(10.dp))
@@ -603,8 +608,8 @@ fun PerfilScreen(
                             ModoOptionButton(
                                 text = "Cambiar a modo microfinanzas",
                                 icon = Icons.Default.AccountBalanceWallet,
-                                seleccionado = modoApp == "microfinanzas",
-                                onClick = { cambiarModo("microfinanzas") }
+                                seleccionado = modoApp == AppMode.MICROFINANZAS,
+                                onClick = { cambiarModo(AppMode.MICROFINANZAS) }
                             )
                         }
                     },
