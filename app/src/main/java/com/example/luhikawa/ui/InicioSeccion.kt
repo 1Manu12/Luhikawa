@@ -60,11 +60,7 @@ class MainActivityLogin : ComponentActivity() {
         setContent {
             val auth = remember { FirebaseAuth.getInstance() }
 
-<<<<<<< HEAD
             // 1. Manejo del ID del users activo o 'guest'
-=======
-            // 1. Manejo del ID del usuario activo o 'guest'
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             var currentUserId by remember { mutableStateOf(auth.currentUser?.uid ?: "guest") }
 
             DisposableEffect(auth) {
@@ -117,11 +113,7 @@ class MainActivityLogin : ComponentActivity() {
 
 @Composable
 fun LoginScreen(navController: NavController) {
-<<<<<<< HEAD
     var users by remember { mutableStateOf("") }
-=======
-    var usuario by remember { mutableStateOf("") }
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
     var contrasena by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
@@ -147,19 +139,11 @@ fun LoginScreen(navController: NavController) {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-<<<<<<< HEAD
                         // Buscar datos en la colección "users" (o "users" según tu base de datos)
                         db.collection("users").document(user.uid).get()
                             .addOnSuccessListener { doc ->
                                 val nombreGuardado = doc.getString("nombreCompleto")
                                     ?: doc.getString("users")
-=======
-                        // Buscar datos en la colección "usuarios" (o "users" según tu base de datos)
-                        db.collection("usuarios").document(user.uid).get()
-                            .addOnSuccessListener { doc ->
-                                val nombreGuardado = doc.getString("nombreCompleto")
-                                    ?: doc.getString("usuario")
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
                                     ?: user.displayName
                                     ?: emailFinal
 
@@ -233,19 +217,11 @@ fun LoginScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(spacingXL))
 
         OutlinedTextField(
-<<<<<<< HEAD
             value = users,
             onValueChange = { users = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text("Users o email", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
-=======
-            value = usuario,
-            onValueChange = { usuario = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = {
-                Text("Usuario o email", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             },
             textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
@@ -258,11 +234,7 @@ fun LoginScreen(navController: NavController) {
                 cursorColor = MaterialTheme.colorScheme.primary
             ),
             leadingIcon = {
-<<<<<<< HEAD
                 Icon(Icons.Default.Person, contentDescription = "Icono Users", tint = MaterialTheme.colorScheme.primary)
-=======
-                Icon(Icons.Default.Person, contentDescription = "Icono Usuario", tint = MaterialTheme.colorScheme.primary)
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             }
         )
 
@@ -303,32 +275,19 @@ fun LoginScreen(navController: NavController) {
 
         Button(
             onClick = {
-<<<<<<< HEAD
                 val inputUsers = users.trim()
                 val inputPass = contrasena.trim()
 
                 if (inputUsers.isBlank() || inputPass.isBlank()) {
-=======
-                val inputUsuario = usuario.trim()
-                val inputPass = contrasena.trim()
-
-                if (inputUsuario.isBlank() || inputPass.isBlank()) {
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
                     Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
                 isLoading = true
 
-<<<<<<< HEAD
                 if (!inputUsers.contains("@")) {
                     db.collection("users")
                         .whereEqualTo("users", inputUsers)
-=======
-                if (!inputUsuario.contains("@")) {
-                    db.collection("usuarios")
-                        .whereEqualTo("usuario", inputUsuario)
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
                         .get()
                         .addOnSuccessListener { querySnapshot ->
                             if (!querySnapshot.isEmpty) {
@@ -336,26 +295,15 @@ fun LoginScreen(navController: NavController) {
                                 realizarLogin(emailEncontrado, inputPass)
                             } else {
                                 isLoading = false
-<<<<<<< HEAD
                                 Toast.makeText(context, "Users no encontrado", Toast.LENGTH_SHORT).show()
-=======
-                                Toast.makeText(context, "Usuario no encontrado", Toast.LENGTH_SHORT).show()
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
                             }
                         }
                         .addOnFailureListener {
                             isLoading = false
-<<<<<<< HEAD
                             Toast.makeText(context, "Error al verificar users", Toast.LENGTH_SHORT).show()
                         }
                 } else {
                     realizarLogin(inputUsers, inputPass)
-=======
-                            Toast.makeText(context, "Error al verificar usuario", Toast.LENGTH_SHORT).show()
-                        }
-                } else {
-                    realizarLogin(inputUsuario, inputPass)
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
                 }
             },
             enabled = !isLoading,
