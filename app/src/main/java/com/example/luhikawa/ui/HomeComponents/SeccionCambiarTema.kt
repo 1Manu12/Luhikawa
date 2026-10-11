@@ -9,6 +9,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.LinearScale
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,45 +29,130 @@ fun SeccionCambiarTema(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val currentTheme by themeViewModel.appThemeColor.collectAsState()
+    val modoClaro by themeViewModel.modoClaro.collectAsState()
+    val iconosColorTema by themeViewModel.iconosColorTema.collectAsState()
 
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { showDialog = true }
-    ) {
-        Row(
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+
+        // ── Interruptor modo claro / oscuro ──
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .clickable { themeViewModel.setModoClaro(!modoClaro) }
         ) {
-            Icon(
-                imageVector = Icons.Default.Palette,
-                contentDescription = "Tema de la aplicación",
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Tema de la aplicación",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+            Row(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = if (modoClaro) Icons.Default.LightMode else Icons.Default.DarkMode,
+                    contentDescription = "Modo claro u oscuro",
+                    tint = MaterialTheme.colorScheme.primary
                 )
-                Text(
-                    text = currentTheme.displayName,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Modo claro",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = if (modoClaro) "Activado" else "Desactivado (modo oscuro)",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                Switch(
+                    checked = modoClaro,
+                    onCheckedChange = { themeViewModel.setModoClaro(it) }
                 )
             }
-            Box(
+        }
+
+        // ── Color de los íconos de la barra inferior ──
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { themeViewModel.setIconosColorTema(!iconosColorTema) }
+        ) {
+            Row(
                 modifier = Modifier
-                    .size(20.dp)
-                    .clip(CircleShape)
-                    .background(getThemePreviewColor(currentTheme))
-                    .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f), CircleShape)
-            )
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LinearScale,
+                    contentDescription = "Íconos de la barra inferior",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Íconos con color del tema",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = if (iconosColorTema) "Color del tema"
+                        else if (modoClaro) "Negros" else "Blancos",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                Switch(
+                    checked = iconosColorTema,
+                    onCheckedChange = { themeViewModel.setIconosColorTema(it) }
+                )
+            }
+        }
+
+        // ── Selector de tema ──
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showDialog = true }
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Palette,
+                    contentDescription = "Tema de la aplicación",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Tema de la aplicación",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = currentTheme.displayName,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .background(getThemePreviewColor(currentTheme))
+                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f), CircleShape)
+                )
+            }
         }
     }
 
@@ -145,6 +233,9 @@ private fun getThemePreviewColor(theme: AppTheme): Color {
         AppTheme.BLANCO_HUESO -> AccentBlancoHueso
         AppTheme.CHAMPANA_CLARO -> AccentChampanaClaro
         AppTheme.GRIS_TAUPE -> AccentGrisTaupe
+        AppTheme.COQUETTE_BALLET -> CoquetteBalletPrimario
+        AppTheme.COQUETTE_FRESA -> CoquetteFresaPrimario
+        AppTheme.COQUETTE_MALVA -> CoquetteMalvaPrimario
         else -> AccentColor32
     }
 }

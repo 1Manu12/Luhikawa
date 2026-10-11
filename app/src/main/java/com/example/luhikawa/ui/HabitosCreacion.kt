@@ -29,6 +29,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.luhikawa.ui.theme.InriaSerif
 import com.example.luhikawa.data.TaskRepository
+import com.example.luhikawa.data.HomeTaskRepository
+import com.example.luhikawa.data.MicrofinanzasRepository
 import com.example.luhikawa.data.AccountManager
 import com.example.luhikawa.R
 import com.google.firebase.auth.FirebaseAuth
@@ -92,7 +94,44 @@ fun RecordatorioScreen(
     var selectedCategory by remember { mutableStateOf(config.categoriaInicial) }
     var selectedFrequency by remember { mutableStateOf("Todos los días") }
 
-    val repository = remember { TaskRepository() }
+    // ── Repositorios: cada modo usa SU colección (la misma que lee el index) ──
+    val taskRepo = remember { TaskRepository() }
+    val homeRepo = remember { HomeTaskRepository() }
+    val financeRepo = remember { MicrofinanzasRepository() }
+
+    val modoRepo = modeViewModel.mode
+
+    val getTaskDb: (String, (Map<String, Any>?) -> Unit) -> Unit = { id, cb ->
+        when (modoRepo) {
+            AppMode.TAREAS -> taskRepo.getTaskById(id, cb)
+            AppMode.HOGAR -> homeRepo.getTaskById(id, cb)
+            AppMode.MICROFINANZAS -> financeRepo.getTaskById(id, cb)
+        }
+    }
+
+    val saveTaskDb: (Map<String, Any>, () -> Unit, (Exception) -> Unit) -> Unit = { map, ok, fail ->
+        when (modoRepo) {
+            AppMode.TAREAS -> taskRepo.saveTask(map, context, ok, fail)
+            AppMode.HOGAR -> homeRepo.saveTask(map, context, ok, fail)
+            AppMode.MICROFINANZAS -> financeRepo.saveTask(map, context, ok, fail)
+        }
+    }
+
+    val updateTaskDb: (String, Map<String, Any>, () -> Unit, (Exception) -> Unit) -> Unit = { id, map, ok, fail ->
+        when (modoRepo) {
+            AppMode.TAREAS -> taskRepo.updateTask(id, map, ok, fail)
+            AppMode.HOGAR -> homeRepo.updateTask(id, map, ok, fail)
+            AppMode.MICROFINANZAS -> financeRepo.updateTask(id, map, ok, fail)
+        }
+    }
+
+    val deleteTaskDb: (String, () -> Unit) -> Unit = { id, ok ->
+        when (modoRepo) {
+            AppMode.TAREAS -> taskRepo.deleteTask(id, ok)
+            AppMode.HOGAR -> homeRepo.deleteTask(id, ok)
+            AppMode.MICROFINANZAS -> financeRepo.deleteTask(id, ok)
+        }
+    }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -102,9 +141,9 @@ fun RecordatorioScreen(
         if (taskId.isNullOrEmpty()) selectedCategory = config.categoriaInicial
     }
 
-    LaunchedEffect(taskId) {
+    LaunchedEffect(taskId, modoRepo) {
         if (!taskId.isNullOrEmpty()) {
-            repository.getTaskById(taskId) { documentData: Map<String, Any>? ->
+            getTaskDb(taskId) { documentData: Map<String, Any>? ->
                 if (documentData != null) {
                     // Las tareas viejas sin "mode" cuentan como "tareas"
                     val modoCargado = AppMode.fromKey(documentData["mode"] as? String)
@@ -350,7 +389,7 @@ fun RecordatorioScreen(
                             taskMap["frequency"] = selectedFrequency
                         }
 
-                        val onSuccessAction = {
+                        val onSuccessAction: () -> Unit = {
                             Toast.makeText(
                                 context,
                                 if (!taskId.isNullOrEmpty()) "¡Actualizado con éxito!" else config.toastGuardado,
@@ -369,19 +408,9 @@ fun RecordatorioScreen(
                         }
 
                         if (!taskId.isNullOrEmpty()) {
-                            repository.updateTask(
-                                taskId = taskId,
-                                taskMap = taskMap,
-                                onSuccess = onSuccessAction,
-                                onFailure = onFailureAction
-                            )
+                            updateTaskDb(taskId, taskMap, onSuccessAction, onFailureAction)
                         } else {
-                            repository.saveTask(
-                                taskMap = taskMap,
-                                context = context,
-                                onSuccess = onSuccessAction,
-                                onFailure = onFailureAction
-                            )
+                            saveTaskDb(taskMap, onSuccessAction, onFailureAction)
                         }
                     },
                     modifier = Modifier
@@ -408,7 +437,7 @@ fun RecordatorioScreen(
                 if (!taskId.isNullOrEmpty()) {
                     OutlinedButton(
                         onClick = {
-                            repository.deleteTask(taskId) {
+                            deleteTaskDb(taskId) {
                                 Toast.makeText(context, "Tarea eliminada", Toast.LENGTH_SHORT).show()
                                 navController.popBackStack()
                             }

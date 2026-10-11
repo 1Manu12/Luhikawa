@@ -109,3 +109,24 @@ val TextGrisTaupe = Color(0xFFE6E4E0)
 val BgGrisTaupe = Color(0xFFD1CEC8)
 val AccentBorderGrisTaupe = Color(0xFFB8B4AC)
 val SurfaceGrisTaupe = Color(0xFF272624)
+
+// ── 15. COQUETTE BALLET (rosa pastel suave) ──
+val AccentCoquetteBalletDark = Color(0xFFF4B6C8)   // acento en modo oscuro
+val CoquetteBalletFondo = Color(0xFFFFF0F5)        // modo claro
+val CoquetteBalletSuperficie = Color(0xFFFFDDE8)
+val CoquetteBalletPrimario = Color(0xFFC96B8A)
+val CoquetteBalletTexto = Color(0xFF6E3249)
+
+// ── 16. COQUETTE FRESA (fresa con crema) ──
+val AccentCoquetteFresaDark = Color(0xFFFF8FA7)
+val CoquetteFresaFondo = Color(0xFFFFF6F1)
+val CoquetteFresaSuperficie = Color(0xFFFFE0E0)
+val CoquetteFresaPrimario = Color(0xFFD94F70)
+val CoquetteFresaTexto = Color(0xFF5E2433)
+
+// ── 17. COQUETTE MALVA (rosa empolvado) ──
+val AccentCoquetteMalvaDark = Color(0xFFD9A3B8)
+val CoquetteMalvaFondo = Color(0xFFFAF1F4)
+val CoquetteMalvaSuperficie = Color(0xFFEFD9E2)
+val CoquetteMalvaPrimario = Color(0xFFA85A76)
+val CoquetteMalvaTexto = Color(0xFF4F2B3A)

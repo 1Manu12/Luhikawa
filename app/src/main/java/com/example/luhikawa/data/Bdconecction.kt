@@ -34,6 +34,8 @@ import com.google.firebase.firestore.SetOptions
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
+// ═════════════════════ TAREAS (predeterminado) → "tasks" ═════════════════════
+
 class TaskRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -50,7 +52,6 @@ class TaskRepository(
     fun getTasksQuery(categoriaSeleccionada: String, context: Context? = null): Query {
         val uid = getUserId(context) ?: "NO_USER_LOGGED_IN"
 
-        // Consulta estricta filtrada por el UID único del users
         var query: Query = db.collection("tasks").whereEqualTo("userId", uid)
 
         if (categoriaSeleccionada != "Todas") {
@@ -85,7 +86,7 @@ class TaskRepository(
         }
 
         val mutableTaskMap = taskMap.toMutableMap()
-        mutableTaskMap["userId"] = uid // Vinculación garantizada al UID
+        mutableTaskMap["userId"] = uid
 
         db.collection("tasks")
             .add(mutableTaskMap)
@@ -130,7 +131,196 @@ class TaskRepository(
     }
 }
 
-// Repositorio de Users
+// ═════════════════════ HOGAR → "home_tasks" ═════════════════════
+
+class HomeTaskRepository(
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+) {
+    private val coleccion = "home_tasks"
+
+    fun getUserId(context: Context? = null): String? {
+        val authUid = auth.currentUser?.uid
+        if (!authUid.isNullOrEmpty()) return authUid
+
+        val savedUid = context?.let { AccountManager(it).getCurrentAccountUid() }
+        return if (!savedUid.isNullOrEmpty()) savedUid else null
+    }
+
+    fun getTasksQuery(categoriaSeleccionada: String, context: Context? = null): Query {
+        val uid = getUserId(context) ?: "NO_USER_LOGGED_IN"
+        var query: Query = db.collection(coleccion).whereEqualTo("userId", uid)
+        if (categoriaSeleccionada != "Todas") {
+            query = query.whereEqualTo("category", categoriaSeleccionada)
+        }
+        return query
+    }
+
+    fun getTaskById(taskId: String, onSuccess: (Map<String, Any>?) -> Unit) {
+        db.collection(coleccion).document(taskId).get()
+            .addOnSuccessListener { document ->
+                onSuccess(if (document.exists()) document.data else null)
+            }
+    }
+
+    fun saveTask(
+        taskMap: Map<String, Any>,
+        context: Context? = null,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        val uid = getUserId(context)
+        if (uid.isNullOrEmpty()) {
+            onFailure(Exception("Users no autenticado"))
+            return
+        }
+
+        val mutableTaskMap = taskMap.toMutableMap()
+        mutableTaskMap["userId"] = uid
+        mutableTaskMap["mode"] = "hogar"
+
+        db.collection(coleccion)
+            .add(mutableTaskMap)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onFailure(e) }
+    }
+
+    fun updateTask(
+        taskId: String,
+        taskMap: Map<String, Any>,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        db.collection(coleccion).document(taskId)
+            .update(taskMap)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onFailure(e) }
+    }
+
+    fun markTaskAsCompleted(taskId: String, completed: Boolean, onSuccess: () -> Unit) {
+        db.collection(coleccion).document(taskId)
+            .update("completed", completed)
+            .addOnSuccessListener { onSuccess() }
+    }
+
+    fun toggleTaskImportance(taskId: String, currentImportance: Boolean, onSuccess: () -> Unit) {
+        db.collection(coleccion).document(taskId)
+            .update("important", !currentImportance)
+            .addOnSuccessListener { onSuccess() }
+    }
+
+    fun updateTaskDueDate(taskId: String, fechaIso: String, onSuccess: () -> Unit) {
+        db.collection(coleccion).document(taskId)
+            .update("dueDate", fechaIso)
+            .addOnSuccessListener { onSuccess() }
+    }
+
+    fun deleteTask(taskId: String, onSuccess: () -> Unit) {
+        db.collection(coleccion).document(taskId)
+            .delete()
+            .addOnSuccessListener { onSuccess() }
+    }
+}
+
+// ═════════════════════ MICROFINANZAS → "finance_movements" ═════════════════════
+
+class MicrofinanzasRepository(
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+) {
+    private val coleccion = "finance_movements"
+
+    fun getUserId(context: Context? = null): String? {
+        val authUid = auth.currentUser?.uid
+        if (!authUid.isNullOrEmpty()) return authUid
+
+        val savedUid = context?.let { AccountManager(it).getCurrentAccountUid() }
+        return if (!savedUid.isNullOrEmpty()) savedUid else null
+    }
+
+    fun getTasksQuery(categoriaSeleccionada: String, context: Context? = null): Query {
+        val uid = getUserId(context) ?: "NO_USER_LOGGED_IN"
+        var query: Query = db.collection(coleccion).whereEqualTo("userId", uid)
+        if (categoriaSeleccionada != "Todas") {
+            query = query.whereEqualTo("category", categoriaSeleccionada)
+        }
+        return query
+    }
+
+    fun getTaskById(taskId: String, onSuccess: (Map<String, Any>?) -> Unit) {
+        db.collection(coleccion).document(taskId).get()
+            .addOnSuccessListener { document ->
+                onSuccess(if (document.exists()) document.data else null)
+            }
+    }
+
+    fun saveTask(
+        taskMap: Map<String, Any>,
+        context: Context? = null,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        val uid = getUserId(context)
+        if (uid.isNullOrEmpty()) {
+            onFailure(Exception("Users no autenticado"))
+            return
+        }
+
+        val monto = (taskMap["amount"] as? Number)?.toDouble() ?: 0.0
+        if (monto <= 0.0) {
+            onFailure(Exception("El monto debe ser mayor a 0"))
+            return
+        }
+
+        val mutableTaskMap = taskMap.toMutableMap()
+        mutableTaskMap["userId"] = uid
+        mutableTaskMap["mode"] = "microfinanzas"
+
+        db.collection(coleccion)
+            .add(mutableTaskMap)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onFailure(e) }
+    }
+
+    fun updateTask(
+        taskId: String,
+        taskMap: Map<String, Any>,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        db.collection(coleccion).document(taskId)
+            .update(taskMap)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onFailure(e) }
+    }
+
+    fun markTaskAsCompleted(taskId: String, completed: Boolean, onSuccess: () -> Unit) {
+        db.collection(coleccion).document(taskId)
+            .update("completed", completed)
+            .addOnSuccessListener { onSuccess() }
+    }
+
+    fun toggleTaskImportance(taskId: String, currentImportance: Boolean, onSuccess: () -> Unit) {
+        db.collection(coleccion).document(taskId)
+            .update("important", !currentImportance)
+            .addOnSuccessListener { onSuccess() }
+    }
+
+    fun updateTaskDueDate(taskId: String, fechaIso: String, onSuccess: () -> Unit) {
+        db.collection(coleccion).document(taskId)
+            .update("dueDate", fechaIso)
+            .addOnSuccessListener { onSuccess() }
+    }
+
+    fun deleteTask(taskId: String, onSuccess: () -> Unit) {
+        db.collection(coleccion).document(taskId)
+            .delete()
+            .addOnSuccessListener { onSuccess() }
+    }
+}
+
+// ═════════════════════ USUARIOS ═════════════════════
+
 class UserRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
@@ -153,6 +343,7 @@ class UserRepository(
                 onSuccess(nombres)
             }
     }
+
     fun getUserPhotoBase64(userId: String, onSuccess: (String?) -> Unit) {
         if (userId.isBlank()) {
             onSuccess(null)
@@ -199,7 +390,6 @@ class UserRepository(
                 val byteArray = byteArrayOutputStream.toByteArray()
                 val base64String = Base64.encodeToString(byteArray, Base64.DEFAULT)
 
-                // Guardar directamente bajo el nodo único del UID
                 db.collection("users").document(userId)
                     .set(mapOf("fotoBase64" to base64String), SetOptions.merge())
                     .addOnSuccessListener { onSuccess(bitmapReducido, base64String) }
@@ -360,9 +550,11 @@ class UserRepository(
     }
 }
 
+// ═════════════════════ AVATAR Y HELPERS ═════════════════════
+
 @Composable
 fun ProfileAvatar(
-    userId: String, // Se debe recibir el UID único del users, no su nombre de users
+    userId: String,
     modifier: Modifier = Modifier,
     repository: UserRepository = remember { UserRepository() },
     onClick: () -> Unit = {}

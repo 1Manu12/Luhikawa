@@ -5,9 +5,12 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -27,9 +30,16 @@ enum class AppTheme(val displayName: String) {
     BLANCO_HUESO("Blanco Hueso / Crema Claro"),
     CHAMPANA_CLARO("Champaña Claro"),
     GRIS_TAUPE("Gris Taupe / Lino"),
+
+    // ── Coquette (rosados) ──
+    COQUETTE_BALLET("Coquette Ballet (Rosa)"),
+    COQUETTE_FRESA("Coquette Fresa"),
+    COQUETTE_MALVA("Coquette Malva"),
+
     SYSTEM("Predeterminado del Sistema")
 }
 
+// ═════════════ MODO OSCURO ═════════════
 // Función helper para construir esquemas homogéneos con el color acento seleccionado
 private fun buildColorScheme(accentColor: Color): ColorScheme {
     return darkColorScheme(
@@ -39,34 +49,118 @@ private fun buildColorScheme(accentColor: Color): ColorScheme {
         tertiary = accentColor,
         background = BackgroundColor, // Mantiene el fondo oscuro base (#1E1E1E)
         onBackground = accentColor,   // Los textos principales adoptan el color del tema
-        surface = SurfaceDark,        // Las tarjetas mantienen el contenedor oscuro (#2B2B36)
+        surface = SurfaceDark,        // Las tarjetas mantienen el contenedor oscuro
         onSurface = accentColor       // El contenido sobre las tarjetas adopta el color acento
     )
+}
+
+// ═════════════ MODO CLARO ═════════════
+// Genera automáticamente una versión clara a partir del color acento:
+// fondo = acento muy aclarado, texto = acento muy oscurecido, primario = acento oscurecido.
+private fun buildLightColorScheme(accentColor: Color): ColorScheme {
+    // Los acentos que ya son claros (marfil, hielo, champaña...) se oscurecen más
+    // para que el texto y los botones tengan contraste sobre el fondo claro.
+    val lum = accentColor.luminance()
+    val oscurecer = (0.35f + (lum - 0.3f).coerceAtLeast(0f) * 0.6f).coerceAtMost(0.65f)
+
+    val primario = lerp(accentColor, Color.Black, oscurecer)
+    val fondo = lerp(accentColor, Color.White, 0.90f)
+    val superficie = lerp(accentColor, Color.White, 0.78f)
+    val superficieVariante = lerp(accentColor, Color.White, 0.68f)
+    val texto = lerp(accentColor, Color.Black, 0.75f)
+
+    return lightColorScheme(
+        primary = primario,
+        onPrimary = Color.White,
+        primaryContainer = lerp(primario, Color.Black, 0.35f),
+        onPrimaryContainer = Color.White,
+        secondary = primario,
+        tertiary = primario,
+        background = fondo,
+        onBackground = texto,
+        surface = superficie,
+        onSurface = texto,
+        surfaceVariant = superficieVariante,
+        onSurfaceVariant = texto,
+        outline = primario.copy(alpha = 0.6f)
+    )
+}
+
+// Esquema claro con colores elegidos a mano (para los temas coquette)
+private fun buildCoquetteLightScheme(
+    fondo: Color,
+    superficie: Color,
+    primario: Color,
+    texto: Color
+): ColorScheme {
+    return lightColorScheme(
+        primary = primario,
+        onPrimary = Color.White,
+        primaryContainer = lerp(primario, Color.Black, 0.3f),
+        onPrimaryContainer = Color.White,
+        secondary = primario,
+        tertiary = primario,
+        background = fondo,
+        onBackground = texto,
+        surface = superficie,
+        onSurface = texto,
+        surfaceVariant = lerp(superficie, primario, 0.15f),
+        onSurfaceVariant = texto,
+        outline = primario.copy(alpha = 0.6f)
+    )
+}
+
+// Color acento de cada tema "normal"
+private fun acentoDe(appTheme: AppTheme, systemIsDark: Boolean): Color = when (appTheme) {
+    AppTheme.BEIGE -> AccentColor32
+    AppTheme.DORADO -> AccentDorado
+    AppTheme.MARRON -> AccentMarron
+    AppTheme.BLANCO -> AccentBlanco
+    AppTheme.VERDE_ESMERALDA -> AccentVerdeEsmeralda
+    AppTheme.VERDE_AMARILLITO -> AccentVerdeAmarillito
+    AppTheme.AZUL_MARINO -> AccentAzulMarino
+    AppTheme.VINO_TINTO -> AccentVinoTinto
+    AppTheme.GRIS_TITANIO -> AccentGrisTitanio
+    AppTheme.GRIS_HIELO -> AccentGrisHielo
+    AppTheme.PLOMO_CLARO -> AccentPlomoClaro
+    AppTheme.BLANCO_HUESO -> AccentBlancoHueso
+    AppTheme.CHAMPANA_CLARO -> AccentChampanaClaro
+    AppTheme.GRIS_TAUPE -> AccentGrisTaupe
+    AppTheme.SYSTEM -> if (systemIsDark) AccentColor32 else AccentBlanco
+    else -> AccentColor32
 }
 
 @Composable
 fun luhikawaTheme(
     appTheme: AppTheme = AppTheme.BEIGE,
+    modoClaro: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val systemIsDark = isSystemInDarkTheme()
 
     val colorScheme: ColorScheme = when (appTheme) {
-        AppTheme.BEIGE -> buildColorScheme(AccentColor32)
-        AppTheme.DORADO -> buildColorScheme(AccentDorado)
-        AppTheme.MARRON -> buildColorScheme(AccentMarron)
-        AppTheme.BLANCO -> buildColorScheme(AccentBlanco)
-        AppTheme.VERDE_ESMERALDA -> buildColorScheme(AccentVerdeEsmeralda)
-        AppTheme.VERDE_AMARILLITO -> buildColorScheme(AccentVerdeAmarillito)
-        AppTheme.AZUL_MARINO -> buildColorScheme(AccentAzulMarino)
-        AppTheme.VINO_TINTO -> buildColorScheme(AccentVinoTinto)
-        AppTheme.GRIS_TITANIO -> buildColorScheme(AccentGrisTitanio)
-        AppTheme.GRIS_HIELO -> buildColorScheme(AccentGrisHielo)
-        AppTheme.PLOMO_CLARO -> buildColorScheme(AccentPlomoClaro)
-        AppTheme.BLANCO_HUESO -> buildColorScheme(AccentBlancoHueso)
-        AppTheme.CHAMPANA_CLARO -> buildColorScheme(AccentChampanaClaro)
-        AppTheme.GRIS_TAUPE -> buildColorScheme(AccentGrisTaupe)
-        AppTheme.SYSTEM -> if (systemIsDark) buildColorScheme(AccentColor32) else buildColorScheme(AccentBlanco)
+        AppTheme.COQUETTE_BALLET ->
+            if (modoClaro) buildCoquetteLightScheme(
+                CoquetteBalletFondo, CoquetteBalletSuperficie,
+                CoquetteBalletPrimario, CoquetteBalletTexto
+            ) else buildColorScheme(AccentCoquetteBalletDark)
+
+        AppTheme.COQUETTE_FRESA ->
+            if (modoClaro) buildCoquetteLightScheme(
+                CoquetteFresaFondo, CoquetteFresaSuperficie,
+                CoquetteFresaPrimario, CoquetteFresaTexto
+            ) else buildColorScheme(AccentCoquetteFresaDark)
+
+        AppTheme.COQUETTE_MALVA ->
+            if (modoClaro) buildCoquetteLightScheme(
+                CoquetteMalvaFondo, CoquetteMalvaSuperficie,
+                CoquetteMalvaPrimario, CoquetteMalvaTexto
+            ) else buildColorScheme(AccentCoquetteMalvaDark)
+
+        else -> {
+            val acento = acentoDe(appTheme, systemIsDark)
+            if (modoClaro) buildLightColorScheme(acento) else buildColorScheme(acento)
+        }
     }
 
     val view = LocalView.current
@@ -76,9 +170,11 @@ fun luhikawaTheme(
             window.statusBarColor = colorScheme.background.toArgb()
             window.navigationBarColor = colorScheme.background.toArgb()
 
+            // Fondo claro -> íconos oscuros en la barra de estado
+            val fondoClaro = colorScheme.background.luminance() > 0.5f
             WindowCompat.getInsetsController(window, view).apply {
-                isAppearanceLightStatusBars = false
-                isAppearanceLightNavigationBars = false
+                isAppearanceLightStatusBars = fondoClaro
+                isAppearanceLightNavigationBars = fondoClaro
             }
         }
     }
@@ -88,143 +184,3 @@ fun luhikawaTheme(
         content = content
     )
 }
-
-// 1. Esquema Beige
-private val BeigeColorScheme = darkColorScheme(
-    primary = AccentColor32,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextBeigea,
-    surface = SurfaceDark,
-    onSurface = TextBeigea
-)
-
-// 2. Esquema Dorado
-private val DoradoColorScheme = darkColorScheme(
-    primary = AccentDorado,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextDorado,
-    surface = SurfaceDorado,
-    onSurface = TextDorado
-)
-
-// 3. Esquema Marrón
-private val MarronColorScheme = darkColorScheme(
-    primary = AccentMarron,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextMarron,
-    surface = SurfaceMarron,
-    onSurface = TextMarron
-)
-
-// 4. Esquema Blanco Roto
-private val BlancoColorScheme = darkColorScheme(
-    primary = AccentBlanco,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextBlanco,
-    surface = SurfaceBlanco,
-    onSurface = TextBlanco
-)
-
-// 5. Esquema Verde Esmeralda
-private val VerdeEsmeraldaColorScheme = darkColorScheme(
-    primary = AccentVerdeEsmeralda,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextVerdeEsmeralda,
-    surface = SurfaceVerdeEsmeralda,
-    onSurface = TextVerdeEsmeralda
-)
-
-// 6. Esquema Verde Amarillito
-private val VerdeAmarillitoColorScheme = darkColorScheme(
-    primary = AccentVerdeAmarillito,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextVerdeAmarillito,
-    surface = SurfaceVerdeAmarillito,
-    onSurface = TextVerdeAmarillito
-)
-
-// 7. Esquema Azul Marino
-private val AzulMarinoColorScheme = darkColorScheme(
-    primary = AccentAzulMarino,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextAzulMarino,
-    surface = SurfaceAzulMarino,
-    onSurface = TextAzulMarino
-)
-
-// 8. Esquema Vino Tinto
-private val VinoTintoColorScheme = darkColorScheme(
-    primary = AccentVinoTinto,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextVinoTinto,
-    surface = SurfaceVinoTinto,
-    onSurface = TextVinoTinto
-)
-
-// 9. Esquema Gris Titanio
-private val GrisTitanioColorScheme = darkColorScheme(
-    primary = AccentGrisTitanio,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextGrisTitanio,
-    surface = SurfaceGrisTitanio,
-    onSurface = TextGrisTitanio
-)
-
-// 10. Esquema Gris Hielo
-private val GrisHieloColorScheme = darkColorScheme(
-    primary = AccentGrisHielo,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextGrisHielo,
-    surface = SurfaceGrisHielo,
-    onSurface = TextGrisHielo
-)
-
-// 11. Esquema Plomo Claro
-private val PlomoClaroColorScheme = darkColorScheme(
-    primary = AccentPlomoClaro,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextPlomoClaro,
-    surface = SurfacePlomoClaro,
-    onSurface = TextPlomoClaro
-)
-
-// 12. Esquema Blanco Hueso
-private val BlancoHuesoColorScheme = darkColorScheme(
-    primary = AccentBlancoHueso,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextBlancoHueso,
-    surface = SurfaceBlancoHueso,
-    onSurface = TextBlancoHueso
-)
-
-// 13. Esquema Champaña Claro
-private val ChampanaClaroColorScheme = darkColorScheme(
-    primary = AccentChampanaClaro,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextChampanaClaro,
-    surface = SurfaceChampanaClaro,
-    onSurface = TextChampanaClaro
-)
-
-// 14. Esquema Gris Taupe
-private val GrisTaupeColorScheme = darkColorScheme(
-    primary = AccentGrisTaupe,
-    onPrimary = TextDarka,
-    background = BackgroundColor,
-    onBackground = TextGrisTaupe,
-    surface = SurfaceGrisTaupe,
-    onSurface = TextGrisTaupe
-)
