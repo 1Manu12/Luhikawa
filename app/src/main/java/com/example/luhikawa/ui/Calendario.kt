@@ -47,15 +47,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.luhikawa.data.HomeTaskRepository
+import com.example.luhikawa.data.MicrofinanzasRepository
 import com.example.luhikawa.data.TaskRepository
 import com.example.luhikawa.ui.HomeComponents.RectanguloConImagen
+import com.example.luhikawa.ui.mode.AppMode
 import com.example.luhikawa.ui.mode.ModeViewModel          // MODO
 import com.example.luhikawa.ui.mode.config                 // MODO
 import com.example.luhikawa.ui.mode.rememberModeViewModel  // MODO
 import com.example.luhikawa.ui.theme.InriaSerif
 import com.example.luhikawa.ui.theme.luhikawaTheme
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import java.time.LocalDate
 
 
@@ -111,26 +114,63 @@ fun CalendarScreen(
     val config = modo.config()                               // MODO
 
     val context = LocalContext.current
-    val db = remember { FirebaseFirestore.getInstance() }
     val auth = remember { FirebaseAuth.getInstance() }
-    val taskRepository = remember { TaskRepository() }
 
-    var tareas by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
-    var fechaSeleccionada by remember { mutableStateOf<LocalDate?>(null) }
+    // ── Fuente de datos según el modo (cada modo usa SU colección) ──
+    val taskRepo = remember { TaskRepository() }
+    val homeRepo = remember { HomeTaskRepository() }
+    val financeRepo = remember { MicrofinanzasRepository() }
+
+    val consulta: () -> Query = {
+        when (modo) {
+            AppMode.TAREAS -> taskRepo.getTasksQuery("Todas", context)
+            AppMode.HOGAR -> homeRepo.getTasksQuery("Todas", context)
+            AppMode.MICROFINANZAS -> financeRepo.getTasksQuery("Todas", context)
+        }
+    }
+    val completarDb: (String, Boolean, () -> Unit) -> Unit = { id, v, ok ->
+        when (modo) {
+            AppMode.TAREAS -> taskRepo.markTaskAsCompleted(id, v, ok)
+            AppMode.HOGAR -> homeRepo.markTaskAsCompleted(id, v, ok)
+            AppMode.MICROFINANZAS -> financeRepo.markTaskAsCompleted(id, v, ok)
+        }
+    }
+    val importanteDb: (String, Boolean, () -> Unit) -> Unit = { id, actual, ok ->
+        when (modo) {
+            AppMode.TAREAS -> taskRepo.toggleTaskImportance(id, actual, ok)
+            AppMode.HOGAR -> homeRepo.toggleTaskImportance(id, actual, ok)
+            AppMode.MICROFINANZAS -> financeRepo.toggleTaskImportance(id, actual, ok)
+        }
+    }
+    val eliminarDb: (String, () -> Unit) -> Unit = { id, ok ->
+        when (modo) {
+            AppMode.TAREAS -> taskRepo.deleteTask(id, ok)
+            AppMode.HOGAR -> homeRepo.deleteTask(id, ok)
+            AppMode.MICROFINANZAS -> financeRepo.deleteTask(id, ok)
+        }
+    }
+
+    // Se reinicia al cambiar de modo, así nunca se mezclan datos
+    var tareas by remember(modo) { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var fechaSeleccionada by remember(modo) { mutableStateOf<LocalDate?>(null) }
 
     val hoy = LocalDate.now()
     var anio by remember { mutableStateOf(hoy.year) }
     var mes by remember { mutableStateOf(hoy.monthValue) }
 
     val cargarTareas = {
-        val uid = taskRepository.getUserId(context)
+        val uid = taskRepo.getUserId(context)
         if (!uid.isNullOrEmpty()) {
-            db.collection("tasks")
-                .whereEqualTo("userId", uid)
+            consulta()
                 .get()
                 .addOnSuccessListener { result ->
                     tareas = result.documents.mapNotNull { doc ->
-                        doc.data?.let { it + ("taskId" to doc.id) }
+                        doc.data?.let { data ->
+                            // En "tasks" pueden quedar registros viejos de hogar/finanzas: no se muestran
+                            val modoDoc = (data["mode"] as? String)?.ifBlank { null } ?: "tareas"
+                            if (modo == AppMode.TAREAS && modoDoc != "tareas") null
+                            else data + ("taskId" to doc.id)
+                        }
                     }
                 }
                 .addOnFailureListener {
@@ -141,14 +181,12 @@ fun CalendarScreen(
         }
     }
 
-    LaunchedEffect(auth.currentUser?.uid) { cargarTareas() }
+    LaunchedEffect(auth.currentUser?.uid, modo) { cargarTareas() }
 
-    // MODO: solo pendientes del modo actual (las viejas sin "mode" cuentan como "tareas")
+    // Solo pendientes del modo actual
     val tareasPendientes = remember(tareas, modo) {
         tareas.filter { tarea ->
-            val completada = tarea["completed"] as? Boolean ?: false
-            val modoTarea = (tarea["mode"] as? String)?.ifBlank { null } ?: "tareas"
-            !completada && modoTarea == modo.key
+            !(tarea["completed"] as? Boolean ?: false)
         }
     }
 
@@ -345,7 +383,7 @@ fun CalendarScreen(
                     val fechaLegible = tarea["date"] as? String ?: ""
                     val horaFormateada = tarea["time"] as? String ?: ""
                     val importante = tarea["important"] as? Boolean == true
-                    val iconIndex = (tarea["icon"] as? Long)?.toInt() ?: 0
+                    val iconIndex = (tarea["icon"] as? Number)?.toInt() ?: 0
                     val id = tarea["taskId"] as? String
                     val monto = (tarea["amount"] as? Number)?.toDouble()   // MODO
 
@@ -373,25 +411,19 @@ fun CalendarScreen(
                             iconIndex = iconIndex,
                             onCircleClick = {
                                 if (id != null) {
-                                    taskRepository.markTaskAsCompleted(id, true) {
-                                        cargarTareas()
-                                    }
+                                    completarDb(id, true) { cargarTareas() }
                                 }
                             },
                             onImportanteClick = {
                                 if (id != null) {
-                                    taskRepository.toggleTaskImportance(id, importante) {
-                                        cargarTareas()
-                                    }
+                                    importanteDb(id, importante) { cargarTareas() }
                                 }
                             },
                             onFechaClick = {},
                             onBasuraClick = {},
                             onEliminar = {
                                 if (id != null) {
-                                    taskRepository.deleteTask(id) {
-                                        cargarTareas()
-                                    }
+                                    eliminarDb(id) { cargarTareas() }
                                 }
                             },
                             onClick = {

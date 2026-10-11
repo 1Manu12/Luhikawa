@@ -88,6 +88,15 @@ import java.util.Calendar
 import java.util.TimeZone
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.luhikawa.ui.MainActivityPerfil
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import com.example.luhikawa.data.HomeTaskRepository
+import com.example.luhikawa.data.MicrofinanzasRepository
+import com.example.luhikawa.ui.mode.AppMode
+import com.example.luhikawa.ui.mode.ModeViewModel
+import com.example.luhikawa.ui.mode.config
+import com.example.luhikawa.ui.mode.rememberModeViewModel
+import com.google.firebase.firestore.Query
 
 val InriaSerif = FontFamily(
     Font(R.font.inriaserif_regular)
@@ -147,19 +156,94 @@ class MainActivity : ComponentActivity() {
 fun Greeting(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    repository: TaskRepository = remember { TaskRepository() }
+    modeViewModel: ModeViewModel = rememberModeViewModel()
 ) {
-    var categoriaSeleccionada by remember { mutableStateOf("Todas") }
     val context = LocalContext.current
-    val categorias = listOf(
-        "Todas",
-        "Trabajo",
-        "Estudio",
-        "Hábitos",
-        "Personal",
-        "Lista de deseos",
-        "Cumpleaños"
-    )
+    val modo = modeViewModel.mode
+    val config = modo.config()
+
+    // ── Fuente de datos según el modo (cada modo usa SU colección) ──
+    val taskRepo = remember { TaskRepository() }
+    val homeRepo = remember { HomeTaskRepository() }
+    val financeRepo = remember { MicrofinanzasRepository() }
+
+    val consulta: (String) -> Query = { cat ->
+        when (modo) {
+            AppMode.TAREAS -> taskRepo.getTasksQuery(cat, context)
+            AppMode.HOGAR -> homeRepo.getTasksQuery(cat, context)
+            AppMode.MICROFINANZAS -> financeRepo.getTasksQuery(cat, context)
+        }
+    }
+    val completarDb: (String, Boolean, () -> Unit) -> Unit = { id, v, ok ->
+        when (modo) {
+            AppMode.TAREAS -> taskRepo.markTaskAsCompleted(id, v, ok)
+            AppMode.HOGAR -> homeRepo.markTaskAsCompleted(id, v, ok)
+            AppMode.MICROFINANZAS -> financeRepo.markTaskAsCompleted(id, v, ok)
+        }
+    }
+    val importanteDb: (String, Boolean, () -> Unit) -> Unit = { id, actual, ok ->
+        when (modo) {
+            AppMode.TAREAS -> taskRepo.toggleTaskImportance(id, actual, ok)
+            AppMode.HOGAR -> homeRepo.toggleTaskImportance(id, actual, ok)
+            AppMode.MICROFINANZAS -> financeRepo.toggleTaskImportance(id, actual, ok)
+        }
+    }
+    val fechaDb: (String, String, () -> Unit) -> Unit = { id, f, ok ->
+        when (modo) {
+            AppMode.TAREAS -> taskRepo.updateTaskDueDate(id, f, ok)
+            AppMode.HOGAR -> homeRepo.updateTaskDueDate(id, f, ok)
+            AppMode.MICROFINANZAS -> financeRepo.updateTaskDueDate(id, f, ok)
+        }
+    }
+    val eliminarDb: (String, () -> Unit) -> Unit = { id, ok ->
+        when (modo) {
+            AppMode.TAREAS -> taskRepo.deleteTask(id, ok)
+            AppMode.HOGAR -> homeRepo.deleteTask(id, ok)
+            AppMode.MICROFINANZAS -> financeRepo.deleteTask(id, ok)
+        }
+    }
+
+    // ── Textos de la interfaz según el modo ──
+    val tituloModo: String? = when (modo) {
+        AppMode.TAREAS -> null
+        AppMode.HOGAR -> "Gestión del Hogar"
+        AppMode.MICROFINANZAS -> "Microfinanzas"
+    }
+    val subtitulo = when (modo) {
+        AppMode.TAREAS -> "Today´s Focus"
+        AppMode.HOGAR -> "Lo que toca hacer en casa"
+        AppMode.MICROFINANZAS -> "Tus movimientos"
+    }
+    val tituloImportantes = if (modo == AppMode.MICROFINANZAS) "Prioritarios" else "Importantes"
+    val tituloCompletadas = when (modo) {
+        AppMode.TAREAS -> "Completadas"
+        AppMode.HOGAR -> "Hechas"
+        AppMode.MICROFINANZAS -> "Saldados"
+    }
+    val tituloEliminar = when (modo) {
+        AppMode.TAREAS -> "Eliminar tarea"
+        AppMode.HOGAR -> "Eliminar tarea del hogar"
+        AppMode.MICROFINANZAS -> "Eliminar movimiento"
+    }
+    val textoEliminar = when (modo) {
+        AppMode.TAREAS -> "¿Estás segura de que la quieres eliminar?"
+        AppMode.HOGAR -> "¿Quieres eliminar esta tarea del hogar?"
+        AppMode.MICROFINANZAS -> "¿Quieres eliminar este movimiento?"
+    }
+    val tituloRestaurar = when (modo) {
+        AppMode.TAREAS -> "Restaurar tarea"
+        AppMode.HOGAR -> "Restaurar tarea del hogar"
+        AppMode.MICROFINANZAS -> "Marcar como pendiente"
+    }
+    val textoRestaurar = when (modo) {
+        AppMode.TAREAS -> "¿Quieres restablecer esta tarea a su estado anterior?"
+        AppMode.HOGAR -> "¿Quieres volver a poner esta tarea del hogar como pendiente?"
+        AppMode.MICROFINANZAS -> "¿Quieres volver a marcar este movimiento como pendiente?"
+    }
+
+    // ── Estado (se reinicia al cambiar de modo, así nunca se mezclan datos) ──
+    var categoriaSeleccionada by remember(modo) { mutableStateOf("Todas") }
+    val categorias = listOf("Todas") + config.categorias
 
     val frasesMotivacionales = listOf(
         "Un pequeño paso hoy es un gran logro mañana, así que da el primero sin miedo.",
@@ -174,14 +258,12 @@ fun Greeting(
         "Eres más capaz de lo que imaginas, y cada día demuestras lo fuerte que eres."
     )
 
-
-
     val fraseDelDia = rememberSaveable { frasesMotivacionales.random() }
     val prefs = remember { context.getSharedPreferences("luhikawa_prefs", Context.MODE_PRIVATE) }
     var frasesActivas by remember { mutableStateOf(prefs.getBoolean("frases_activas", true)) }
     var showMenuFrases by remember { mutableStateOf(false) }
 
-    var listaDeTareas by remember {
+    var listaDeTareas by remember(modo) {
         mutableStateOf<List<Pair<String, Map<String, Any>>>>(emptyList())
     }
 
@@ -194,16 +276,25 @@ fun Greeting(
     var selectedTaskIdForRestore by remember { mutableStateOf<String?>(null) }
 
     val cargarTareas = {
-        repository.getTasksQuery(categoriaSeleccionada, context = context)
+        consulta(categoriaSeleccionada)
             .get()
             .addOnSuccessListener { result ->
+                android.util.Log.d("GreetingDebug", "modo=$modo docs=${result.size()}")
                 listaDeTareas = result.documents.mapNotNull { doc ->
-                    doc.data?.let { doc.id to it }
+                    doc.data?.let { data ->
+                        // En "tasks" pueden quedar registros viejos de hogar/finanzas: no se muestran
+                        val modoDoc = (data["mode"] as? String)?.ifBlank { null } ?: "tareas"
+                        if (modo == AppMode.TAREAS && modoDoc != "tareas") null else doc.id to data
+                    }
                 }
+            }
+            .addOnFailureListener { e ->
+                android.util.Log.e("GreetingDebug", "Error consultando $modo", e)
+                Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             }
     }
 
-    LaunchedEffect(categoriaSeleccionada) {
+    LaunchedEffect(modo, categoriaSeleccionada) {
         cargarTareas()
     }
 
@@ -238,6 +329,40 @@ fun Greeting(
         !(tarea["completed"] as? Boolean ?: false)
     }
 
+    val pendientes = tareasPendientesTotales.size
+    val textoContador = when (modo) {
+        AppMode.TAREAS -> "Tienes $pendientes tareas pendientes"
+        AppMode.HOGAR ->
+            if (pendientes == 0) "¡No te falta ninguna tarea del hogar!"
+            else "Te faltan $pendientes tareas del hogar"
+        AppMode.MICROFINANZAS ->
+            if (pendientes == 0) "Todos tus movimientos están saldados"
+            else "Tienes $pendientes movimientos por saldar"
+    }
+
+    // Resumen financiero (solo se usa en microfinanzas)
+    fun sumaPor(tipo: String) = listaDeTareas
+        .filter { (_, t) -> t["category"] == tipo }
+        .sumOf { (_, t) -> (t["amount"] as? Number)?.toDouble() ?: 0.0 }
+
+    val totalIngresos = sumaPor("Ingreso")
+    val totalGastos = sumaPor("Gasto")
+
+    // Texto de cada fila (en microfinanzas agrega el monto)
+    fun textoFila(tarea: Map<String, Any>): String {
+        val tituloBase = tarea["title"] as? String ?: "Sin título"
+        val fechaLegible = tarea["date"] as? String ?: ""
+        val horaFormateada = tarea["time"] as? String ?: ""
+        val infoTiempo = buildString {
+            if (fechaLegible.isNotEmpty()) append(fechaLegible)
+            if (fechaLegible.isNotEmpty() && horaFormateada.isNotEmpty()) append(" • ")
+            if (horaFormateada.isNotEmpty()) append(horaFormateada)
+        }
+        val base = if (infoTiempo.isNotEmpty()) "$tituloBase - $infoTiempo" else tituloBase
+        val monto = (tarea["amount"] as? Number)?.toDouble()
+        return if (modo == AppMode.MICROFINANZAS && monto != null) "$base • \$%,.2f".format(monto) else base
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -252,6 +377,18 @@ fun Greeting(
                 modifier = Modifier.fillMaxSize()
             ) {
                 RectanguloConImagen()
+
+                // Cabecera solo en hogar y microfinanzas
+                if (tituloModo != null) {
+                    Text(
+                        text = tituloModo,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 30.sp,
+                        fontFamily = InriaSerif,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp)
+                    )
+                }
 
                 Row(
                     modifier = Modifier
@@ -270,7 +407,7 @@ fun Greeting(
                 }
 
                 Text(
-                    text = "Tienes ${tareasPendientesTotales.size} tareas pendientes",
+                    text = textoContador,
                     color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 26.sp,
                     fontFamily = InriaSerif,
@@ -280,15 +417,39 @@ fun Greeting(
                         .clickable { categoriaSeleccionada = "Todas" }
                 )
 
+                // Resumen financiero: SOLO en microfinanzas
+                if (modo == AppMode.MICROFINANZAS) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            ResumenCelda("Ingresos", totalIngresos)
+                            ResumenCelda("Gastos", totalGastos)
+                            ResumenCelda("Balance", totalIngresos - totalGastos)
+                        }
+                    }
+                }
+
                 Text(
-                    text = "Today´s Focus",
+                    text = subtitulo,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .padding(top = 8.dp)
                         .padding(horizontal = 12.dp)
                 )
 
-                // Lista scrollable con tareas
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -296,12 +457,12 @@ fun Greeting(
                         .padding(top = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Tareas Importantes
+                    // Importantes
                     if (tareasImportantes.isNotEmpty()) {
                         item {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Importantes (${tareasImportantes.size})",
+                                text = "$tituloImportantes (${tareasImportantes.size})",
                                 color = MaterialTheme.colorScheme.primary,
                                 fontSize = 18.sp,
                                 fontFamily = InriaSerif,
@@ -313,30 +474,15 @@ fun Greeting(
 
                         items(tareasImportantes.size) { index ->
                             val (id, tarea) = tareasImportantes[index]
-                            val tituloBase = tarea["title"] as? String ?: "Sin título"
-                            val fechaLegible = tarea["date"] as? String ?: ""
-                            val horaFormateada = tarea["time"] as? String ?: ""
-                            val iconIndex = (tarea["icon"] as? Long)?.toInt() ?: 0
-
-                            val infoTiempo = buildString {
-                                if (fechaLegible.isNotEmpty()) append(fechaLegible)
-                                if (fechaLegible.isNotEmpty() && horaFormateada.isNotEmpty()) append(" • ")
-                                if (horaFormateada.isNotEmpty()) append(horaFormateada)
-                            }
-
-                            val textoConFecha = if (infoTiempo.isNotEmpty()) "$tituloBase - $infoTiempo" else tituloBase
+                            val iconIndex = (tarea["icon"] as? Number)?.toInt() ?: 0
 
                             SwipeableTaskItem(
-                                textoTarea = textoConFecha,
+                                textoTarea = textoFila(tarea),
                                 fechaTarea = tarea["date"] as? String,
                                 isCafe = (index % 2 == 0),
                                 iconIndex = iconIndex,
-                                onCircleClick = {
-                                    repository.markTaskAsCompleted(id, true) { cargarTareas() }
-                                },
-                                onImportanteClick = {
-                                    repository.toggleTaskImportance(id, true) { cargarTareas() }
-                                },
+                                onCircleClick = { completarDb(id, true) { cargarTareas() } },
+                                onImportanteClick = { importanteDb(id, true) { cargarTareas() } },
                                 onFechaClick = {
                                     selectedTaskIdForDate = id
                                     showDatePicker = true
@@ -345,48 +491,27 @@ fun Greeting(
                                     taskIdToDelete = id
                                     showDeleteDialog = true
                                 },
-                                onEliminar = {
-                                    repository.deleteTask(id) { cargarTareas() }
-                                },
-                                onClick = {
-                                    navController.navigate("recordatorio?taskId=$id")
-                                }
+                                onEliminar = { eliminarDb(id) { cargarTareas() } },
+                                onClick = { navController.navigate("recordatorio?taskId=$id") }
                             )
                         }
 
-                        item {
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
+                        item { Spacer(modifier = Modifier.height(12.dp)) }
                     }
 
-                    // Tareas Activas
+                    // Activas
                     items(tareasActivasOrdenadas.size) { index ->
                         val (id, tarea) = tareasActivasOrdenadas[index]
-                        val tituloBase = tarea["title"] as? String ?: "Sin título"
-                        val fechaLegible = tarea["date"] as? String ?: ""
-                        val horaFormateada = tarea["time"] as? String ?: ""
                         val esImportante = tarea["important"] as? Boolean ?: false
-                        val iconIndex = (tarea["icon"] as? Long)?.toInt() ?: 0
-
-                        val infoTiempo = buildString {
-                            if (fechaLegible.isNotEmpty()) append(fechaLegible)
-                            if (fechaLegible.isNotEmpty() && horaFormateada.isNotEmpty()) append(" • ")
-                            if (horaFormateada.isNotEmpty()) append(horaFormateada)
-                        }
-
-                        val textoConFecha = if (infoTiempo.isNotEmpty()) "$tituloBase - $infoTiempo" else tituloBase
+                        val iconIndex = (tarea["icon"] as? Number)?.toInt() ?: 0
 
                         SwipeableTaskItem(
-                            textoTarea = textoConFecha,
+                            textoTarea = textoFila(tarea),
                             fechaTarea = tarea["date"] as? String,
                             isCafe = (index % 2 == 0),
                             iconIndex = iconIndex,
-                            onCircleClick = {
-                                repository.markTaskAsCompleted(id, true) { cargarTareas() }
-                            },
-                            onImportanteClick = {
-                                repository.toggleTaskImportance(id, esImportante) { cargarTareas() }
-                            },
+                            onCircleClick = { completarDb(id, true) { cargarTareas() } },
+                            onImportanteClick = { importanteDb(id, esImportante) { cargarTareas() } },
                             onFechaClick = {
                                 selectedTaskIdForDate = id
                                 showDatePicker = true
@@ -395,21 +520,17 @@ fun Greeting(
                                 taskIdToDelete = id
                                 showDeleteDialog = true
                             },
-                            onEliminar = {
-                                repository.deleteTask(id) { cargarTareas() }
-                            },
-                            onClick = {
-                                navController.navigate("recordatorio?taskId=$id")
-                            }
+                            onEliminar = { eliminarDb(id) { cargarTareas() } },
+                            onClick = { navController.navigate("recordatorio?taskId=$id") }
                         )
                     }
 
-                    // Tareas Completadas
+                    // Completadas / Hechas / Saldados
                     if (tareasCompletadas.isNotEmpty()) {
                         item {
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "Completadas (${tareasCompletadas.size})",
+                                text = "$tituloCompletadas (${tareasCompletadas.size})",
                                 color = MaterialTheme.colorScheme.primary,
                                 fontSize = 18.sp,
                                 fontFamily = InriaSerif,
@@ -422,12 +543,15 @@ fun Greeting(
                         items(tareasCompletadas.size) { index ->
                             val (id, tarea) = tareasCompletadas[index]
                             val titulo = tarea["title"] as? String ?: "Sin título"
+                            val monto = (tarea["amount"] as? Number)?.toDouble()
+                            val textoCompletada =
+                                if (modo == AppMode.MICROFINANZAS && monto != null)
+                                    "$titulo • \$%,.2f".format(monto)
+                                else titulo
 
                             RectanguloCompletadoPapelera(
-                                textoTarea = titulo,
-                                onDeleteClick = {
-                                    repository.deleteTask(id) { cargarTareas() }
-                                },
+                                textoTarea = textoCompletada,
+                                onDeleteClick = { eliminarDb(id) { cargarTareas() } },
                                 onClick = {
                                     selectedTaskIdForRestore = id
                                     showRestoreDialog = true
@@ -437,8 +561,7 @@ fun Greeting(
                     }
                 }
 
-                // Imagen y texto inferior (Gato)
-                // Mantén presionado para activar/desactivar las frases motivacionales
+                // Gato y frases (mantén presionado para activar/desactivar)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -449,7 +572,7 @@ fun Greeting(
                     if (frasesActivas) {
                         ImagenDerechaTextoIzquierda(frase = fraseDelDia)
                     } else {
-                        ImagenDerechaTextoIzquierda() // usa la frase original por defecto
+                        ImagenDerechaTextoIzquierda()
                     }
 
                     DropdownMenu(
@@ -498,7 +621,7 @@ fun Greeting(
                                             calendar.get(Calendar.MONTH) + 1,
                                             calendar.get(Calendar.DAY_OF_MONTH)
                                         )
-                                        repository.updateTaskDueDate(taskId, fechaIso) { cargarTareas() }
+                                        fechaDb(taskId, fechaIso) { cargarTareas() }
                                     }
                                 }
                                 showDatePicker = false
@@ -543,11 +666,11 @@ fun Greeting(
                     onDismissRequest = { showDeleteDialog = false },
                     containerColor = MaterialTheme.colorScheme.surface,
                     title = {
-                        Text(text = "Eliminar tarea", fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface)
+                        Text(text = tituloEliminar, fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface)
                     },
                     text = {
                         Text(
-                            text = "¿Estás segura de que la quieres eliminar?",
+                            text = textoEliminar,
                             fontFamily = InriaSerif,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -555,9 +678,7 @@ fun Greeting(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                taskIdToDelete?.let { id ->
-                                    repository.deleteTask(id) { cargarTareas() }
-                                }
+                                taskIdToDelete?.let { id -> eliminarDb(id) { cargarTareas() } }
                                 showDeleteDialog = false
                                 taskIdToDelete = null
                             }
@@ -583,11 +704,11 @@ fun Greeting(
                     onDismissRequest = { showRestoreDialog = false },
                     containerColor = MaterialTheme.colorScheme.surface,
                     title = {
-                        Text(text = "Restaurar tarea", fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface)
+                        Text(text = tituloRestaurar, fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface)
                     },
                     text = {
                         Text(
-                            text = "¿Quieres restablecer esta tarea a su estado anterior?",
+                            text = textoRestaurar,
                             fontFamily = InriaSerif,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -595,9 +716,7 @@ fun Greeting(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                selectedTaskIdForRestore?.let { id ->
-                                    repository.markTaskAsCompleted(id, false) { cargarTareas() }
-                                }
+                                selectedTaskIdForRestore?.let { id -> completarDb(id, false) { cargarTareas() } }
                                 showRestoreDialog = false
                                 selectedTaskIdForRestore = null
                             }
@@ -622,6 +741,25 @@ fun Greeting(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ResumenCelda(etiqueta: String, valor: Double) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = etiqueta,
+            fontFamily = InriaSerif,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+        )
+        Text(
+            text = "\$%,.2f".format(valor),
+            fontFamily = InriaSerif,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
