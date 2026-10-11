@@ -10,7 +10,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.BorderStroke
@@ -34,11 +33,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.outlined.Assignment
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -72,6 +75,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -101,10 +105,13 @@ import com.example.luhikawa.R
 import com.example.luhikawa.data.AccountManager
 import com.example.luhikawa.data.StoredAccount
 import com.example.luhikawa.data.UserRepository
-import com.example.luhikawa.ui.HomeComponents.HeaderSection
 import com.example.luhikawa.ui.HomeComponents.ParteAbajo
 import com.example.luhikawa.ui.HomeComponents.RectanguloConImagen
 import com.example.luhikawa.ui.components.SeccionCambiarTema
+import com.example.luhikawa.ui.mode.AppMode
+import com.example.luhikawa.ui.mode.ModeViewModel
+import com.example.luhikawa.ui.mode.config
+import com.example.luhikawa.ui.mode.rememberModeViewModel
 import com.example.luhikawa.ui.theme.InriaSerif
 import com.example.luhikawa.ui.theme.ThemeViewModel
 import com.example.luhikawa.ui.theme.luhikawaTheme
@@ -126,14 +133,14 @@ class MainActivityPerfil : FragmentActivity() {
             val context = LocalContext.current
             val accountManager = remember { AccountManager(context) }
 
-            var currentUsuarioId by remember {
+            var currentUsersId by remember {
                 mutableStateOf(auth.currentUser?.uid ?: accountManager.getCurrentAccountUid() ?: "guest")
             }
 
             DisposableEffect(auth) {
                 val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
                     val newUid = firebaseAuth.currentUser?.uid ?: accountManager.getCurrentAccountUid() ?: "guest"
-                    currentUsuarioId = newUid
+                    currentUsersId = newUid
                 }
                 auth.addAuthStateListener(authStateListener)
                 onDispose {
@@ -141,10 +148,16 @@ class MainActivityPerfil : FragmentActivity() {
                 }
             }
 
-            val themeViewModel: ThemeViewModel = viewModel(key = currentUsuarioId)
+            val themeViewModel: ThemeViewModel = viewModel(key = currentUsersId)
 
-            LaunchedEffect(currentUsuarioId) {
-                themeViewModel.setUser(currentUsuarioId)
+            // MODO: un solo ViewModel compartido por todas las pantallas
+            val modeViewModel: ModeViewModel = viewModel(
+                key = "mode_$currentUsersId",
+                factory = ModeViewModel.factory(application, currentUsersId)
+            )
+
+            LaunchedEffect(currentUsersId) {
+                themeViewModel.setUser(currentUsersId)
             }
 
             val currentThemeColor by themeViewModel.appThemeColor.collectAsState()
@@ -174,12 +187,20 @@ class MainActivityPerfil : FragmentActivity() {
                             composable("perfil") {
                                 PerfilScreen(
                                     navController = navController,
-                                    themeViewModel = themeViewModel
+                                    themeViewModel = themeViewModel,
+                                    modeViewModel = modeViewModel
                                 )
                             }
 
-                            composable("calendario") { CalendarScreen(navController = navController) }
-                            composable("ia") { AiScreen() }
+                            composable("calendario") {
+                                CalendarScreen(
+                                    navController = navController,
+                                    modeViewModel = modeViewModel
+                                )
+                            }
+
+                            composable("ia") { AiScreen(modo = modeViewModel.mode) }
+
                             composable(
                                 route = "recordatorio?taskId={taskId}",
                                 arguments = listOf(
@@ -190,8 +211,14 @@ class MainActivityPerfil : FragmentActivity() {
                                     }
                                 )
                             ) { backStackEntry ->
+                                // Ignora el placeholder literal "{taskId}" del botón central
                                 val taskId = backStackEntry.arguments?.getString("taskId")
-                                RecordatorioScreen(navController = navController, taskId = taskId)
+                                    ?.takeUnless { it.isBlank() || it == "{taskId}" }
+                                RecordatorioScreen(
+                                    navController = navController,
+                                    taskId = taskId,
+                                    modeViewModel = modeViewModel
+                                )
                             }
                         }
                     }
@@ -253,6 +280,7 @@ fun solicitarHuellaDigital(
 fun PerfilScreen(
     navController: NavController,
     themeViewModel: ThemeViewModel = viewModel(),
+    modeViewModel: ModeViewModel = rememberModeViewModel(),
     userRepository: UserRepository = remember { UserRepository() }
 ) {
     val context = LocalContext.current
@@ -274,7 +302,6 @@ fun PerfilScreen(
     var showEditarCuentaDialog by remember { mutableStateOf(false) }
     var showCambiarPasswordDialog by remember { mutableStateOf(false) }
 
-    var showHistorial by remember { mutableStateOf(false) }
     var showPreferencias by remember { mutableStateOf(false) }
 
     var horaNotificacion by remember { mutableStateOf(8) }
@@ -286,6 +313,15 @@ fun PerfilScreen(
 
     var passActual by remember { mutableStateOf("") }
     var nuevaPass by remember { mutableStateOf("") }
+
+    // ---------- Modo de la aplicación ----------
+    val modoApp = modeViewModel.mode
+
+    fun cambiarModo(nuevoModo: AppMode) {
+        modeViewModel.cambiarModo(nuevoModo)
+        Toast.makeText(context, nuevoModo.config().toastCambioModo, Toast.LENGTH_SHORT).show()
+    }
+    // -------------------------------------------
 
     val activeStoredAccount = remember(cuentasGuardadas, selectedUid, currentUser) {
         cuentasGuardadas.find { it.uid == selectedUid }
@@ -535,6 +571,46 @@ fun PerfilScreen(
                         ) {
 
                             SeccionCambiarTema(themeViewModel = themeViewModel)
+
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                modifier = Modifier.padding(vertical = 16.dp)
+                            )
+
+                            Text(
+                                text = "Modo de la aplicación",
+                                fontFamily = InriaSerif,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            ModoOptionButton(
+                                text = "Cambiar a modo tareas (predeterminado)",
+                                icon = Icons.Default.CheckCircle,
+                                seleccionado = modoApp == AppMode.TAREAS,
+                                onClick = { cambiarModo(AppMode.TAREAS) }
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            ModoOptionButton(
+                                text = "Cambiar a modo hogar",
+                                icon = Icons.Default.Home,
+                                seleccionado = modoApp == AppMode.HOGAR,
+                                onClick = { cambiarModo(AppMode.HOGAR) }
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            ModoOptionButton(
+                                text = "Cambiar a modo microfinanzas",
+                                icon = Icons.Default.AccountBalanceWallet,
+                                seleccionado = modoApp == AppMode.MICROFINANZAS,
+                                onClick = { cambiarModo(AppMode.MICROFINANZAS) }
+                            )
                         }
                     },
                     confirmButton = {
@@ -654,7 +730,7 @@ fun PerfilScreen(
                     OutlinedTextField(
                         value = nuevoNombre,
                         onValueChange = { nuevoNombre = it },
-                        label = { Text("Nombre de usuario", color = MaterialTheme.colorScheme.onSurface) },
+                        label = { Text("Nombre de users", color = MaterialTheme.colorScheme.onSurface) },
                         enabled = !isSaving,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -734,7 +810,7 @@ fun PerfilScreen(
                                 }
                             )
                         } else {
-                            Toast.makeText(context, "No se encontró un ID de usuario válido", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "No se encontró un ID de users válido", Toast.LENGTH_SHORT).show()
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -1149,6 +1225,57 @@ fun PerfilOptionButton(text: String, icon: ImageVector, onClick: () -> Unit) {
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+fun ModoOptionButton(
+    text: String,
+    icon: ImageVector,
+    seleccionado: Boolean,
+    onClick: () -> Unit
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(
+            if (seleccionado) 2.dp else 1.dp,
+            if (seleccionado) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+        ),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (seleccionado) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+            else Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        )
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = text,
+            fontFamily = InriaSerif,
+            fontSize = 15.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        if (seleccionado) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Seleccionado",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
             )
         }
     }

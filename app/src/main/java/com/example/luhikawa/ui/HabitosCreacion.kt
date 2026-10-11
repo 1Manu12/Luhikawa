@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -35,6 +36,10 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.util.Calendar
 import com.example.luhikawa.ui.HomeComponents.*
+import com.example.luhikawa.ui.mode.AppMode
+import com.example.luhikawa.ui.mode.ModeViewModel
+import com.example.luhikawa.ui.mode.config
+import com.example.luhikawa.ui.mode.rememberModeViewModel
 import com.example.luhikawa.ui.theme.luhikawaTheme
 
 class MainActivityH : ComponentActivity() {
@@ -56,8 +61,22 @@ class MainActivityH : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
+fun RecordatorioScreen(
+    navController: NavController,
+    taskId: String? = null,
+    modeViewModel: ModeViewModel = rememberModeViewModel()
+) {
+    // Ignora el placeholder literal "{taskId}" (sirve desde cualquier activity)
+    @Suppress("NAME_SHADOWING")
+    val taskId = taskId?.takeUnless { it.isBlank() || it == "{taskId}" }
+
+    // Al editar se usa el modo de la tarea guardada; al crear, el modo actual de la app
+    var modoDeLaTarea by remember { mutableStateOf<AppMode?>(null) }
+    val modo = modoDeLaTarea ?: modeViewModel.mode
+    val config = modo.config()
+
     var reminderName by remember { mutableStateOf("") }
+    var monto by remember { mutableStateOf("") }
     var selectedIcon by remember { mutableStateOf(0) }
     var selectedImportance by remember { mutableStateOf("Alta") }
 
@@ -70,7 +89,7 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
     var selectedDate by remember { mutableStateOf("15 Oct 2026") }
     var selectedTime by remember { mutableStateOf("16:00") }
 
-    var selectedCategory by remember { mutableStateOf("Trabajo") }
+    var selectedCategory by remember { mutableStateOf(config.categoriaInicial) }
     var selectedFrequency by remember { mutableStateOf("Todos los días") }
 
     val repository = remember { TaskRepository() }
@@ -78,12 +97,23 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
+    // En una tarea NUEVA, si cambia el modo se reinicia la categoría
+    LaunchedEffect(modo) {
+        if (taskId.isNullOrEmpty()) selectedCategory = config.categoriaInicial
+    }
+
     LaunchedEffect(taskId) {
         if (!taskId.isNullOrEmpty()) {
             repository.getTaskById(taskId) { documentData: Map<String, Any>? ->
                 if (documentData != null) {
+                    // Las tareas viejas sin "mode" cuentan como "tareas"
+                    val modoCargado = AppMode.fromKey(documentData["mode"] as? String)
+                    modoDeLaTarea = modoCargado
+
                     reminderName = documentData["title"] as? String ?: ""
-                    selectedCategory = documentData["category"] as? String ?: "Trabajo"
+                    selectedCategory = documentData["category"] as? String
+                        ?: modoCargado.config().categoriaInicial
+                    monto = (documentData["amount"] as? Number)?.toString() ?: ""
                     selectedDate = documentData["date"] as? String ?: "15 Oct 2026"
                     selectedTime = documentData["time"] as? String ?: "16:00"
                     selectedImportance = documentData["importance"] as? String ?: "Alta"
@@ -111,7 +141,10 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                NuevoRecordatorioHeader(isEditing = !taskId.isNullOrEmpty())
+                NuevoRecordatorioHeader(
+                    isEditing = !taskId.isNullOrEmpty(),
+                    tituloNuevo = config.tituloNuevo
+                )
 
                 Text(
                     text = "Detalles",
@@ -123,14 +156,14 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                 )
 
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    InputLabel(text = "Nombre del recordatorio")
+                    InputLabel(text = config.etiquetaNombre)
                     Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
                         value = reminderName,
                         onValueChange = { reminderName = it },
                         placeholder = {
                             Text(
-                                text = "Ej: Cita con el dentista",
+                                text = config.placeholderNombre,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                 fontFamily = InriaSerif
                             )
@@ -148,6 +181,34 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
+                }
+
+                if (config.mostrarMonto) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        InputLabel(text = config.etiquetaMonto)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        OutlinedTextField(
+                            value = monto,
+                            onValueChange = { monto = it.filter { c -> c.isDigit() || c == '.' } },
+                            placeholder = {
+                                Text(
+                                    text = "0.00",
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                    fontFamily = InriaSerif
+                                )
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
                 }
 
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -202,15 +263,18 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                 }
 
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    InputLabel(text = "Clasificación")
+                    InputLabel(text = config.etiquetaClasificacion)
                     Spacer(modifier = Modifier.height(6.dp))
                     IndexStyleCategorySelector(
                         selectedCategory = selectedCategory,
-                        onCategorySelected = { selectedCategory = it }
+                        onCategorySelected = { selectedCategory = it },
+                        categories = config.categorias
                     )
                 }
 
-                if (selectedCategory == "Hábitos") {
+                if (config.categoriaConFrecuencia != null &&
+                    selectedCategory == config.categoriaConFrecuencia
+                ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         InputLabel(text = "Frecuencia de repetición")
                         Spacer(modifier = Modifier.height(6.dp))
@@ -235,7 +299,17 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                         if (activeUserId.isNullOrEmpty()) {
                             Toast.makeText(
                                 context,
-                                "Error: Usuario no autenticado",
+                                "Error: Users no autenticado",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+
+                        val montoValor = monto.toDoubleOrNull()
+                        if (config.mostrarMonto && montoValor == null) {
+                            Toast.makeText(
+                                context,
+                                "Escribe un monto válido",
                                 Toast.LENGTH_SHORT
                             ).show()
                             return@Button
@@ -254,7 +328,7 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                         val taskMap = mutableMapOf<String, Any>(
                             "userId" to activeUserId,
                             "title" to reminderName,
-                            "category" to if (selectedCategory == "Todo") "Tareas" else selectedCategory,
+                            "category" to selectedCategory,
                             "date" to selectedDate,
                             "dueDate" to fechaIso,
                             "time" to selectedTime,
@@ -263,14 +337,23 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                             "completed" to false
                         )
 
-                        if (selectedCategory == "Hábitos") {
+                        // El modo solo se escribe al CREAR; editar no lo cambia
+                        if (taskId.isNullOrEmpty()) taskMap["mode"] = modo.key
+
+                        if (config.mostrarMonto && montoValor != null) {
+                            taskMap["amount"] = montoValor
+                        }
+
+                        if (config.categoriaConFrecuencia != null &&
+                            selectedCategory == config.categoriaConFrecuencia
+                        ) {
                             taskMap["frequency"] = selectedFrequency
                         }
 
                         val onSuccessAction = {
                             Toast.makeText(
                                 context,
-                                if (!taskId.isNullOrEmpty()) "¡Actualizado con éxito!" else "¡Guardado con éxito!",
+                                if (!taskId.isNullOrEmpty()) "¡Actualizado con éxito!" else config.toastGuardado,
                                 Toast.LENGTH_SHORT
                             ).show()
                             navController.popBackStack()
@@ -311,7 +394,7 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = if (!taskId.isNullOrEmpty()) "ACTUALIZAR" else "GUARDAR",
+                        text = if (!taskId.isNullOrEmpty()) "ACTUALIZAR" else config.textoGuardar,
                         style = TextStyle(
                             fontFamily = InriaSerif,
                             fontSize = 18.sp,
@@ -321,7 +404,7 @@ fun RecordatorioScreen(navController: NavController, taskId: String? = null) {
                     )
                 }
 
-                // Opción para eliminar tarea al deslizar hacia abajo (solo si se está editando)
+                // Opción para eliminar tarea (solo si se está editando)
                 if (!taskId.isNullOrEmpty()) {
                     OutlinedButton(
                         onClick = {

@@ -50,7 +50,11 @@ class TaskRepository(
     fun getTasksQuery(categoriaSeleccionada: String, context: Context? = null): Query {
         val uid = getUserId(context) ?: "NO_USER_LOGGED_IN"
 
+<<<<<<< HEAD
+        // Consulta estricta filtrada por el UID único del users
+=======
         // Consulta estricta filtrada por el UID único del usuario
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
         var query: Query = db.collection("tasks").whereEqualTo("userId", uid)
 
         if (categoriaSeleccionada != "Todas") {
@@ -80,7 +84,11 @@ class TaskRepository(
         val uid = getUserId(context)
 
         if (uid.isNullOrEmpty()) {
+<<<<<<< HEAD
+            onFailure(Exception("Users no autenticado"))
+=======
             onFailure(Exception("Usuario no autenticado"))
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             return
         }
 
@@ -130,13 +138,21 @@ class TaskRepository(
     }
 }
 
+<<<<<<< HEAD
+// Repositorio de Users
+=======
 // Repositorio de Usuarios
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
 class UserRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
     fun getUserProfileUrl(userId: String, onSuccess: (String) -> Unit) {
         if (userId.isBlank()) return
+<<<<<<< HEAD
+        db.collection("users").document(userId).get()
+=======
         db.collection("usuarios").document(userId).get()
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             .addOnSuccessListener { document ->
                 if (document.exists()) {
                     onSuccess(document.getString("fotoPerfil") ?: "")
@@ -145,7 +161,11 @@ class UserRepository(
     }
 
     fun getAllUsersNames(onSuccess: (List<String>) -> Unit) {
+<<<<<<< HEAD
+        db.collection("users").get()
+=======
         db.collection("usuarios").get()
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             .addOnSuccessListener { result ->
                 val nombres = result.documents.mapNotNull { doc ->
                     doc.getString("displayName") ?: doc.getString("nombreCompleto")
@@ -159,7 +179,11 @@ class UserRepository(
             return
         }
 
+<<<<<<< HEAD
+        db.collection("users").document(userId).get()
+=======
         db.collection("usuarios").document(userId).get()
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             .addOnSuccessListener { doc ->
                 if (doc.exists() && doc.contains("fotoBase64")) {
                     onSuccess(doc.getString("fotoBase64"))
@@ -200,7 +224,11 @@ class UserRepository(
                 val base64String = Base64.encodeToString(byteArray, Base64.DEFAULT)
 
                 // Guardar directamente bajo el nodo único del UID
+<<<<<<< HEAD
+                db.collection("users").document(userId)
+=======
                 db.collection("usuarios").document(userId)
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
                     .set(mapOf("fotoBase64" to base64String), SetOptions.merge())
                     .addOnSuccessListener { onSuccess(bitmapReducido, base64String) }
             }
@@ -215,7 +243,11 @@ class UserRepository(
         onError: (String) -> Unit
     ) {
         if (userId.isBlank()) {
+<<<<<<< HEAD
+            onError("ID de users no válido")
+=======
             onError("ID de usuario no válido")
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             return
         }
 
@@ -224,7 +256,11 @@ class UserRepository(
             "photoBase64" to null
         )
 
+<<<<<<< HEAD
+        db.collection("users").document(userId)
+=======
         db.collection("usuarios").document(userId)
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             .set(updates, SetOptions.merge())
             .addOnSuccessListener { onExito() }
             .addOnFailureListener { err ->
@@ -243,7 +279,11 @@ class UserRepository(
         val firebaseUser = FirebaseAuth.getInstance().currentUser
 
         if (targetUid.isBlank()) {
+<<<<<<< HEAD
+            onError("El ID de users no es válido.")
+=======
             onError("El ID de usuario no es válido.")
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             return
         }
 
@@ -259,7 +299,11 @@ class UserRepository(
             "nombreCompleto" to nuevoNombre
         )
 
+<<<<<<< HEAD
+        db.collection("users").document(targetUid)
+=======
         db.collection("usuarios").document(targetUid)
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             .set(datosActualizados, SetOptions.merge())
             .addOnSuccessListener {
                 accountManager?.updateAccountData(targetUid, nuevoNombre, firebaseUser?.email ?: "")
@@ -281,7 +325,11 @@ class UserRepository(
     ) {
         val authUser = FirebaseAuth.getInstance().currentUser
 
+<<<<<<< HEAD
+        db.collection("users").document(targetUid)
+=======
         db.collection("usuarios").document(targetUid)
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             .set(mapOf("email" to nuevoEmail), SetOptions.merge())
             .addOnSuccessListener {
                 val currentName = firebaseUserDisplayName(targetUid)
@@ -314,7 +362,11 @@ class UserRepository(
 
     private fun firebaseUserDisplayName(uid: String): String {
         val user = FirebaseAuth.getInstance().currentUser
+<<<<<<< HEAD
+        return if (user?.uid == uid) user.displayName ?: "Users" else "Users"
+=======
         return if (user?.uid == uid) user.displayName ?: "Usuario" else "Usuario"
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
     }
 
     fun editPasswordUser(
@@ -327,7 +379,11 @@ class UserRepository(
         val user = FirebaseAuth.getInstance().currentUser
 
         if (user == null || user.email.isNullOrEmpty()) {
+<<<<<<< HEAD
+            onError("No hay una sesión de users activa.")
+=======
             onError("No hay una sesión de usuario activa.")
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             return
         }
 
@@ -362,7 +418,11 @@ class UserRepository(
 
 @Composable
 fun ProfileAvatar(
+<<<<<<< HEAD
+    userId: String, // Se debe recibir el UID único del users, no su nombre de users
+=======
     userId: String, // Se debe recibir el UID único del usuario, no su nombre de usuario
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
     modifier: Modifier = Modifier,
     repository: UserRepository = remember { UserRepository() },
     onClick: () -> Unit = {}

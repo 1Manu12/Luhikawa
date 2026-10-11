@@ -50,6 +50,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.luhikawa.R
 import com.example.luhikawa.model.ChatViewModel
 import com.example.luhikawa.ui.HomeComponents.RectanguloConImagen
+import com.example.luhikawa.ui.mode.AppMode
 import com.example.luhikawa.ui.theme.luhikawaTheme
 
 class MainActivityIA : ComponentActivity() {
@@ -70,8 +71,12 @@ class MainActivityIA : ComponentActivity() {
 
 @Composable
 fun AiScreen(
+    modo: AppMode = AppMode.TAREAS,
     viewModel: ChatViewModel = viewModel()
 ) {
+    // Le avisa al ViewModel del chat en qué modo está la app
+    LaunchedEffect(modo) { viewModel.setModo(modo) }
+
     val estado by viewModel.estado.collectAsState()
     var textoEntrada by remember { mutableStateOf("") }
     val estadoLista = rememberLazyListState()
@@ -109,7 +114,7 @@ fun AiScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 items(estado.mensajes) { msg ->
-                    if (msg.deUsuario) {
+                    if (msg.deUsers) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End

@@ -1,6 +1,10 @@
 # Plan de Implementación - Interfaz de Prueba para IA
 
+<<<<<<< HEAD
+Este plan detalla los cambios necesarios para crear una interfaz de users funcional en Jetpack Compose que permita probar el modelo de red neuronal.
+=======
 Este plan detalla los cambios necesarios para crear una interfaz de usuario funcional en Jetpack Compose que permita probar el modelo de red neuronal.
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
 
 ## Cambios Propuestos
 
@@ -12,7 +16,11 @@ Este plan detalla los cambios necesarios para crear una interfaz de usuario func
 #### [MODIFY] [network.kt](file:///D:/Programacion/Kotlin/app/src/main/java/com/example/finalproject/model/neurons/network.kt)
 - Modificar la función `network` para que devuelva la lista de resultados (`List<Double>`), permitiendo que la ui muestre los datos procesados.
 
+<<<<<<< HEAD
+### Interfaz de Users (ui)
+=======
 ### Interfaz de Usuario (ui)
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
 
 #### [MODIFY] [MainActivity.kt](file:///D:/Programacion/Kotlin/app/src/main/java/com/example/finalproject/MainActivity.kt)
 - Implementar una pantalla con:
