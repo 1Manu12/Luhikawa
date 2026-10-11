@@ -41,20 +41,12 @@ object AuthService {
                             val firebaseUser = auth.currentUser
                             val userId = firebaseUser?.uid ?: ""
                             val email = firebaseUser?.email ?: ""
-<<<<<<< HEAD
                             val nombre = firebaseUser?.displayName ?: "Users Google"
-=======
-                            val nombre = firebaseUser?.displayName ?: "Usuario Google"
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
 
                             // Operación con Firestore
                             val userMap = hashMapOf(
                                 "uid" to userId,
-<<<<<<< HEAD
                                 "users" to nombre,
-=======
-                                "usuario" to nombre,
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
                                 "nombreCompleto" to nombre,
                                 "email" to email
                             )
