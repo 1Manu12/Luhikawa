@@ -21,7 +21,11 @@ class ThemeViewModel : ViewModel() {
     val appThemeColor: StateFlow<AppTheme> = _appThemeColor.asStateFlow()
 
     fun setUser(userId: String) {
+<<<<<<< HEAD
         // Si el users no ha cambiado y ya hay un listener activo, no hacemos nada
+=======
+        // Si el usuario no ha cambiado y ya hay un listener activo, no hacemos nada
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
         if (activeUserId == userId && themeListenerRegistration != null) return
 
         // 1. Desconectar inmediatamente el listener de la cuenta anterior
@@ -35,7 +39,11 @@ class ThemeViewModel : ViewModel() {
         if (userId == "guest" || userId.isBlank()) return
 
         // 3. Suscribirse ÚNICAMENTE al documento específico del UID activo
+<<<<<<< HEAD
         themeListenerRegistration = db.collection("users")
+=======
+        themeListenerRegistration = db.collection("usuarios")
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             .document(userId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null || snapshot == null || !snapshot.exists()) return@addSnapshotListener
@@ -56,12 +64,21 @@ class ThemeViewModel : ViewModel() {
         val currentUid = auth.currentUser?.uid ?: activeUserId ?: return
         if (currentUid == "guest" || currentUid.isBlank()) return
 
+<<<<<<< HEAD
         // 1. Reflejar inmediatamente el cambio en la interfaz del users actual
         _appThemeColor.value = theme
 
         // 2. Guardar el tema EXCLUSIVAMENTE en el documento del UID del users autenticado
         val data = mapOf("colorTema" to theme.name)
         db.collection("users")
+=======
+        // 1. Reflejar inmediatamente el cambio en la interfaz del usuario actual
+        _appThemeColor.value = theme
+
+        // 2. Guardar el tema EXCLUSIVAMENTE en el documento del UID del usuario autenticado
+        val data = mapOf("colorTema" to theme.name)
+        db.collection("usuarios")
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             .document(currentUid)
             .set(data, SetOptions.merge())
     }

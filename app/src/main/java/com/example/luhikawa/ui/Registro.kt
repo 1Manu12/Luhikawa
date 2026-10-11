@@ -79,7 +79,11 @@ class MainActivityRegistro : ComponentActivity() {
 @Composable
 fun RegistroScreen(navController: NavController) {
 
+<<<<<<< HEAD
     var users by remember { mutableStateOf("") }
+=======
+    var usuario by remember { mutableStateOf("") }
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
     var nombreCompleto by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
@@ -135,11 +139,19 @@ fun RegistroScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(spacingXL))
 
         OutlinedTextField(
+<<<<<<< HEAD
             value = users,
             onValueChange = { users = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text("Users", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+=======
+            value = usuario,
+            onValueChange = { usuario = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text("Usuario", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             },
             textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
@@ -152,7 +164,11 @@ fun RegistroScreen(navController: NavController) {
                 cursorColor = MaterialTheme.colorScheme.primary
             ),
             leadingIcon = {
+<<<<<<< HEAD
                 Icon(Icons.Default.Person, contentDescription = "Icono Users", tint = MaterialTheme.colorScheme.primary)
+=======
+                Icon(Icons.Default.Person, contentDescription = "Icono Usuario", tint = MaterialTheme.colorScheme.primary)
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             }
         )
 
@@ -272,7 +288,11 @@ fun RegistroScreen(navController: NavController) {
 
         Button(
             onClick = {
+<<<<<<< HEAD
                 if (email.isBlank() || contrasena.isBlank() || users.isBlank() || nombreCompleto.isBlank()) {
+=======
+                if (email.isBlank() || contrasena.isBlank() || usuario.isBlank() || nombreCompleto.isBlank()) {
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
                     Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
@@ -302,7 +322,11 @@ fun RegistroScreen(navController: NavController) {
 
                             val userMap = hashMapOf(
                                 "uid" to userId,
+<<<<<<< HEAD
                                 "users" to users,
+=======
+                                "usuario" to usuario,
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
                                 "nombreCompleto" to nombreCompleto,
                                 "email" to email
                             )
@@ -310,7 +334,11 @@ fun RegistroScreen(navController: NavController) {
                             db.collection("users").document(userId)
                                 .set(userMap)
                                 .addOnSuccessListener {
+<<<<<<< HEAD
                                     Toast.makeText(context, "¡Bienvenida a Luhikawa, $users!", Toast.LENGTH_SHORT).show()
+=======
+                                    Toast.makeText(context, "¡Bienvenida a Luhikawa, $usuario!", Toast.LENGTH_SHORT).show()
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
                                     navController.navigate("greeting") {
                                         popUpTo("registro") { inclusive = true }
                                     }

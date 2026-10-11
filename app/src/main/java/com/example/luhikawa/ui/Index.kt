@@ -87,6 +87,7 @@ import com.example.luhikawa.ui.theme.luhikawaTheme
 import java.util.Calendar
 import java.util.TimeZone
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.luhikawa.ui.MainActivityPerfil
 
 val InriaSerif = FontFamily(
     Font(R.font.inriaserif_regular)
@@ -112,7 +113,7 @@ class MainActivity : ComponentActivity() {
                         composable("greeting") { Greeting(navController = navController) }
                         composable("perfil") { PerfilScreen(navController = navController) }
                         composable("calendario") { CalendarScreen(navController = navController) }
-                        composable("ia") { AiScreen() }
+                        composable("ia") { AiScreen()}
                         composable(
                             route = "recordatorio?taskId={taskId}",
                             arguments = listOf(
