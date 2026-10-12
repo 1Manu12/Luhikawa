@@ -1,0 +1,464 @@
+package com.example.luhikawa.ui
+
+import android.R.attr.singleLine
+import android.R.attr.textStyle
+import android.os.Bundle
+import android.util.Base64
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.example.luhikawa.ui.theme.*
+import com.example.luhikawa.R
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.launch
+import java.security.SecureRandom
+import com.example.luhikawa.domain.services.AuthService
+import com.example.luhikawa.ui.theme.AccentColor32
+import com.google.firebase.auth.userProfileChangeRequest
+import com.example.luhikawa.data.AccountManager
+import com.example.luhikawa.data.StoredAccount
+
+
+class MainActivityRegistro : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            luhikawaTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = BgDarka
+                ) {
+                    val navController = rememberNavController()
+                    RegistroScreen(navController = navController)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun RegistroScreen(navController: NavController) {
+
+<<<<<<< HEAD
+    var users by remember { mutableStateOf("") }
+=======
+    var usuario by remember { mutableStateOf("") }
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
+    var nombreCompleto by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var contrasena by remember { mutableStateOf("") }
+    var confirmarContrasena by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    val scrollState = rememberScrollState()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val credentialManager = CredentialManager.create(context)
+
+    val accountManager = remember { AccountManager(context) }
+
+    val auth = Firebase.auth
+    val db = Firebase.firestore
+
+    val spacingXS = 20.dp
+    val spacingS = 50.dp
+    val spacingM = 16.dp
+    val spacingL = 24.dp
+    val spacingXL = 30.dp
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState)
+            .padding(horizontal = 20.dp, vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        Spacer(modifier = Modifier.height(spacingS))
+
+        Image(
+            painter = painterResource(id = R.drawable.logolkb),
+            contentDescription = "Logo LK",
+            modifier = Modifier.size(60.dp),
+            contentScale = ContentScale.Fit
+        )
+
+        Spacer(modifier = Modifier.height(spacingXS))
+
+        Image(
+            painter = painterResource(id = R.drawable.titlebeige),
+            contentDescription = "LUHIKAWA",
+            modifier = Modifier
+                .fillMaxWidth(0.75f)
+                .wrapContentHeight(),
+            contentScale = ContentScale.FillWidth,
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+        )
+
+        Spacer(modifier = Modifier.height(spacingXL))
+
+        OutlinedTextField(
+<<<<<<< HEAD
+            value = users,
+            onValueChange = { users = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text("Users", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+=======
+            value = usuario,
+            onValueChange = { usuario = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text("Usuario", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
+            },
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
+            singleLine = true,
+            shape = RoundedCornerShape(28.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
+            ),
+            leadingIcon = {
+<<<<<<< HEAD
+                Icon(Icons.Default.Person, contentDescription = "Icono Users", tint = MaterialTheme.colorScheme.primary)
+=======
+                Icon(Icons.Default.Person, contentDescription = "Icono Usuario", tint = MaterialTheme.colorScheme.primary)
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
+            }
+        )
+
+        Spacer(modifier = Modifier.height(spacingM))
+
+        OutlinedTextField(
+            value = nombreCompleto,
+            onValueChange = { nombreCompleto = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text("Nombre Completo", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+            },
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
+            singleLine = true,
+            shape = RoundedCornerShape(28.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
+            ),
+            leadingIcon = {
+                Icon(Icons.Default.Person, contentDescription = "Icono Nombre", tint = MaterialTheme.colorScheme.primary)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(spacingM))
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text("Correo electrónico", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+            },
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
+            singleLine = true,
+            shape = RoundedCornerShape(28.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
+            ),
+            leadingIcon = {
+                Icon(Icons.Default.Email, contentDescription = "Icono Email", tint = MaterialTheme.colorScheme.primary)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(spacingM))
+
+        OutlinedTextField(
+            value = contrasena,
+            onValueChange = { contrasena = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text("Contraseña", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+            },
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
+            singleLine = true,
+            shape = RoundedCornerShape(28.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
+            ),
+            leadingIcon = {
+                Icon(Icons.Default.Lock, contentDescription = "Icono Contraseña", tint = MaterialTheme.colorScheme.primary)
+            },
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = "Mostrar/Ocultar contraseña", tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(spacingM))
+
+        OutlinedTextField(
+            value = confirmarContrasena,
+            onValueChange = { confirmarContrasena = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text("Confirmar Contraseña", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+            },
+            textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
+            singleLine = true,
+            shape = RoundedCornerShape(28.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary
+            ),
+            leadingIcon = {
+                Icon(Icons.Default.Lock, contentDescription = "Icono Confirmar Contraseña", tint = MaterialTheme.colorScheme.primary)
+            },
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = "Mostrar/Ocultar confirmar contraseña", tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(spacingL))
+
+        Button(
+            onClick = {
+<<<<<<< HEAD
+                if (email.isBlank() || contrasena.isBlank() || users.isBlank() || nombreCompleto.isBlank()) {
+=======
+                if (email.isBlank() || contrasena.isBlank() || usuario.isBlank() || nombreCompleto.isBlank()) {
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
+                    Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+                if (contrasena != confirmarContrasena) {
+                    Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+
+                auth.createUserWithEmailAndPassword(email, contrasena)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val user = auth.currentUser
+                            val userId = user?.uid ?: ""
+                            val profileUpdates = userProfileChangeRequest {
+                                displayName = nombreCompleto
+                            }
+                            user?.updateProfile(profileUpdates)
+
+                            val storedAccount = StoredAccount(
+                                uid = userId,
+                                email = email,
+                                password = contrasena,
+                                displayName = nombreCompleto
+                            )
+                            accountManager.saveAccount(storedAccount)
+                            accountManager.setCurrentAccount(userId)
+
+                            val userMap = hashMapOf(
+                                "uid" to userId,
+<<<<<<< HEAD
+                                "users" to users,
+=======
+                                "usuario" to usuario,
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
+                                "nombreCompleto" to nombreCompleto,
+                                "email" to email
+                            )
+
+                            db.collection("users").document(userId)
+                                .set(userMap)
+                                .addOnSuccessListener {
+<<<<<<< HEAD
+                                    Toast.makeText(context, "¡Bienvenida a Luhikawa, $users!", Toast.LENGTH_SHORT).show()
+=======
+                                    Toast.makeText(context, "¡Bienvenida a Luhikawa, $usuario!", Toast.LENGTH_SHORT).show()
+>>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
+                                    navController.navigate("greeting") {
+                                        popUpTo("registro") { inclusive = true }
+                                    }
+                                }
+                                .addOnFailureListener { e ->
+                                    Toast.makeText(context, "Error al guardar datos: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                                }
+
+                        } else {
+                            Log.e("RegistroAuth", "Fallo en Auth: ${task.exception?.localizedMessage}", task.exception)
+                            Toast.makeText(context, "Error de registro: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            shape = RoundedCornerShape(28.dp)
+        ) {
+            Text("Registrarse", style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary))
+        }
+
+        Spacer(modifier = Modifier.height(spacingM))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, shape = CircleShape)
+                    .clickable {
+                        coroutineScope.launch {
+                            try {
+                                val secureRandom = SecureRandom()
+                                val bytes = ByteArray(64)
+                                secureRandom.nextBytes(bytes)
+                                val nonce = Base64.encodeToString(bytes, Base64.NO_WRAP)
+
+                                val googleIdOption = GetGoogleIdOption.Builder()
+                                    .setServerClientId("550323438631-7ju4fallk6fvg6vce4s1vbdtfguvb4tp.apps.googleusercontent.com")
+                                    .setFilterByAuthorizedAccounts(false)
+                                    .setNonce(nonce)
+                                    .build()
+
+                                val request = GetCredentialRequest.Builder()
+                                    .addCredentialOption(googleIdOption)
+                                    .build()
+
+                                val result = credentialManager.getCredential(
+                                    context = context,
+                                    request = request
+                                )
+
+                                AuthService.handleGoogleCredentialResponse(
+                                    result = result,
+                                    auth = auth,
+                                    db = db,
+                                    context = context,
+                                    onSuccess = {
+                                        val currentUser = auth.currentUser
+                                        if (currentUser != null) {
+                                            val googleAccount = StoredAccount(
+                                                uid = currentUser.uid,
+                                                email = currentUser.email ?: "",
+                                                password = "", // Autenticado vía Google
+                                                displayName = currentUser.displayName
+                                                    ?: currentUser.email ?: ""
+                                            )
+                                            accountManager.saveAccount(googleAccount)
+                                            accountManager.setCurrentAccount(currentUser.uid)
+                                        }
+
+                                        navController.navigate("greeting") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    }
+                                )
+
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error de Google: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_google),
+                    contentDescription = "Registrarse con Google",
+                    modifier = Modifier.size(32.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(spacingM))
+
+        Text(
+            text = "¿Ya tienes una cuenta?",
+            style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f), textAlign = TextAlign.Center)
+        )
+
+        Spacer(modifier = Modifier.height(spacingXS))
+
+        Text(
+            text = "Inicia sesión",
+            style = TextStyle(
+                fontFamily = InriaSerif, fontSize = 18.sp, color = MaterialTheme.colorScheme.primary,
+                textDecoration = TextDecoration.Underline, textAlign = TextAlign.Center
+            ),
+            modifier = Modifier.clickable {
+                navController.navigate("login") {
+                    popUpTo("registro") { inclusive = true }
+                }
+            }
+        )
+    }
+}
