@@ -104,7 +104,6 @@ import com.canhub.cropper.CropImageView
 import com.example.luhikawa.R
 import com.example.luhikawa.data.AccountManager
 import com.example.luhikawa.data.StoredAccount
-import com.example.luhikawa.data.UserRepository
 import com.example.luhikawa.ui.HomeComponents.ParteAbajo
 import com.example.luhikawa.ui.HomeComponents.RectanguloConImagen
 import com.example.luhikawa.ui.components.SeccionCambiarTema
@@ -117,6 +116,8 @@ import com.example.luhikawa.ui.theme.ThemeViewModel
 import com.example.luhikawa.ui.theme.luhikawaTheme
 import com.google.firebase.auth.FirebaseAuth
 import java.io.File
+import com.example.luhikawa.data.base64ToBitmap
+import com.example.luhikawa.data.UserRepository
 
 class MainActivityPerfil : FragmentActivity() {
 
@@ -134,12 +135,16 @@ class MainActivityPerfil : FragmentActivity() {
             val accountManager = remember { AccountManager(context) }
 
             var currentUsersId by remember {
-                mutableStateOf(auth.currentUser?.uid ?: accountManager.getCurrentAccountUid() ?: "guest")
+                mutableStateOf(
+                    auth.currentUser?.uid ?: accountManager.getCurrentAccountUid() ?: "guest"
+                )
             }
 
             DisposableEffect(auth) {
                 val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-                    val newUid = firebaseAuth.currentUser?.uid ?: accountManager.getCurrentAccountUid() ?: "guest"
+                    val newUid =
+                        firebaseAuth.currentUser?.uid ?: accountManager.getCurrentAccountUid()
+                        ?: "guest"
                     currentUsersId = newUid
                 }
                 auth.addAuthStateListener(authStateListener)
@@ -161,8 +166,13 @@ class MainActivityPerfil : FragmentActivity() {
             }
 
             val currentThemeColor by themeViewModel.appThemeColor.collectAsState()
+            val currentModoClaro by themeViewModel.modoClaro.collectAsState()
+            val iconosColorTema by themeViewModel.iconosColorTema.collectAsState()
 
-            luhikawaTheme(appTheme = currentThemeColor) {
+            luhikawaTheme(
+                appTheme = currentThemeColor,
+                modoClaro = currentModoClaro
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -171,7 +181,10 @@ class MainActivityPerfil : FragmentActivity() {
                         containerColor = MaterialTheme.colorScheme.background,
                         bottomBar = {
                             if (currentRoute != null && currentRoute != "login" && currentRoute != "registro") {
-                                ParteAbajo(navController = navController)
+                                ParteAbajo(
+                                    navController = navController,
+                                    iconosColorTema = iconosColorTema
+                                )
                             }
                         }
                     ) { innerPadding ->
@@ -182,7 +195,13 @@ class MainActivityPerfil : FragmentActivity() {
                         ) {
                             composable("login") { LoginScreen(navController = navController) }
                             composable("registro") { RegistroScreen(navController = navController) }
-                            composable("greeting") { Greeting(navController = navController) }
+
+                            composable("greeting") {
+                                Greeting(
+                                    navController = navController,
+                                    modeViewModel = modeViewModel
+                                )
+                            }
 
                             composable("perfil") {
                                 PerfilScreen(
@@ -227,6 +246,7 @@ class MainActivityPerfil : FragmentActivity() {
         }
     }
 }
+
 
 fun solicitarHuellaDigital(
     activity: FragmentActivity,
@@ -1184,15 +1204,6 @@ fun PerfilScreen(
                 }
             }
         )
-    }
-}
-
-fun base64ToBitmap(base64Str: String): Bitmap? {
-    return try {
-        val decodedBytes = Base64.decode(base64Str, Base64.DEFAULT)
-        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-    } catch (e: Exception) {
-        null
     }
 }
 

@@ -82,6 +82,7 @@ import com.example.luhikawa.ui.theme.AccentVerdeEsmeralda
 import com.example.luhikawa.ui.theme.AccentVinoTinto
 import com.example.luhikawa.ui.theme.AppTheme
 import com.example.luhikawa.ui.theme.InriaSerif
+import androidx.compose.ui.graphics.luminance
 
 @Composable
 fun RectanguloConImagen() {
@@ -470,16 +471,28 @@ fun FrequencySelector(
 }
 
 @Composable
-fun ParteAbajo(navController: NavController) {
+fun ParteAbajo(
+    navController: NavController,
+    iconosColorTema: Boolean = false   // true = íconos con el color del tema
+) {
     val currentRoute = navController.currentBackStackEntry?.destination?.route
     val context = LocalContext.current
     val backgroundColor = MaterialTheme.colorScheme.background
-    val iconColor = MaterialTheme.colorScheme.primary
+
+    // Modo claro u oscuro según el fondo real del tema
+    val esModoClaro = backgroundColor.luminance() > 0.5f
+
+    // Automático: blanco en oscuro, negro en claro. Opcional: color del tema.
+    val iconColor = if (iconosColorTema) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        if (esModoClaro) Color.Black else Color.White
+    }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(backgroundColor) // Mismo tono oscuro sin contraste
+            .background(backgroundColor)
             .padding(vertical = 12.dp, horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
@@ -493,7 +506,7 @@ fun ParteAbajo(navController: NavController) {
             BottomNavItem(
                 icon = Icons.Default.CalendarMonth,
                 contentDescription = "Calendario",
-                tint = Color.White,
+                tint = iconColor,
                 onClick = {
                     if (currentRoute != "calendario") {
                         navController.navigate("calendario") {
@@ -514,7 +527,7 @@ fun ParteAbajo(navController: NavController) {
             BottomNavItem(
                 icon = Icons.Default.AutoAwesome,
                 contentDescription = "IA",
-                tint = Color.White,
+                tint = iconColor,
                 onClick = {
                     if (currentRoute != "ia") {
                         navController.navigate("ia") {
@@ -531,8 +544,8 @@ fun ParteAbajo(navController: NavController) {
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.2f))
-                .border(BorderStroke(1.5.dp, Color.White), CircleShape)
+                .background(iconColor.copy(alpha = 0.2f))
+                .border(BorderStroke(1.5.dp, iconColor), CircleShape)
                 .clickable {
                     if (currentRoute?.startsWith("recordatorio") != true) {
                         navController.navigate("recordatorio?taskId={taskId}") {
@@ -554,7 +567,7 @@ fun ParteAbajo(navController: NavController) {
             BottomNavItem(
                 icon = Icons.Default.Home,
                 contentDescription = "Agenda",
-                tint = Color.White,
+                tint = iconColor,
                 onClick = {
                     navController.navigate("greeting") {
                         popUpTo("greeting") { inclusive = true }
@@ -601,7 +614,7 @@ fun ParteAbajo(navController: NavController) {
             Icon(
                 imageVector = Icons.Default.PersonOutline,
                 contentDescription = "Perfil",
-                tint = Color.White,
+                tint = iconColor,
                 modifier = Modifier.size(28.dp)
             )
         }

@@ -20,12 +20,17 @@ class ThemeViewModel : ViewModel() {
     private val _appThemeColor = MutableStateFlow(AppTheme.BEIGE)
     val appThemeColor: StateFlow<AppTheme> = _appThemeColor.asStateFlow()
 
+    // false = modo oscuro (predeterminado), true = modo claro
+    private val _modoClaro = MutableStateFlow(false)
+    val modoClaro: StateFlow<Boolean> = _modoClaro.asStateFlow()
+
+    // false = íconos de la barra inferior blancos/negros según el modo
+    // true  = íconos de la barra inferior con el color del tema
+    private val _iconosColorTema = MutableStateFlow(false)
+    val iconosColorTema: StateFlow<Boolean> = _iconosColorTema.asStateFlow()
+
     fun setUser(userId: String) {
-<<<<<<< HEAD
-        // Si el users no ha cambiado y ya hay un listener activo, no hacemos nada
-=======
         // Si el usuario no ha cambiado y ya hay un listener activo, no hacemos nada
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
         if (activeUserId == userId && themeListenerRegistration != null) return
 
         // 1. Desconectar inmediatamente el listener de la cuenta anterior
@@ -33,17 +38,15 @@ class ThemeViewModel : ViewModel() {
         themeListenerRegistration = null
         activeUserId = userId
 
-        // 2. IMPORTANTE: Resetear el tema a Beige por defecto antes de cargar los datos de la nueva cuenta
+        // 2. IMPORTANTE: Resetear tema y modo antes de cargar los datos de la nueva cuenta
         _appThemeColor.value = AppTheme.BEIGE
+        _modoClaro.value = false
+        _iconosColorTema.value = false
 
         if (userId == "guest" || userId.isBlank()) return
 
         // 3. Suscribirse ÚNICAMENTE al documento específico del UID activo
-<<<<<<< HEAD
-        themeListenerRegistration = db.collection("users")
-=======
         themeListenerRegistration = db.collection("usuarios")
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             .document(userId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null || snapshot == null || !snapshot.exists()) return@addSnapshotListener
@@ -57,6 +60,10 @@ class ThemeViewModel : ViewModel() {
                     }
                     _appThemeColor.value = nuevoTema
                 }
+
+                // Si nunca se guardó, queda en modo oscuro
+                _modoClaro.value = snapshot.getBoolean("modoClaro") ?: false
+                _iconosColorTema.value = snapshot.getBoolean("iconosColorTema") ?: false
             }
     }
 
@@ -64,23 +71,36 @@ class ThemeViewModel : ViewModel() {
         val currentUid = auth.currentUser?.uid ?: activeUserId ?: return
         if (currentUid == "guest" || currentUid.isBlank()) return
 
-<<<<<<< HEAD
-        // 1. Reflejar inmediatamente el cambio en la interfaz del users actual
-        _appThemeColor.value = theme
-
-        // 2. Guardar el tema EXCLUSIVAMENTE en el documento del UID del users autenticado
-        val data = mapOf("colorTema" to theme.name)
-        db.collection("users")
-=======
         // 1. Reflejar inmediatamente el cambio en la interfaz del usuario actual
         _appThemeColor.value = theme
 
         // 2. Guardar el tema EXCLUSIVAMENTE en el documento del UID del usuario autenticado
         val data = mapOf("colorTema" to theme.name)
         db.collection("usuarios")
->>>>>>> 96d87d5bb05cff382f3ca050982449d72159b87b
             .document(currentUid)
             .set(data, SetOptions.merge())
+    }
+
+    fun setModoClaro(claro: Boolean) {
+        _modoClaro.value = claro   // se aplica siempre, aunque no haya cuenta
+
+        val currentUid = auth.currentUser?.uid ?: activeUserId ?: return
+        if (currentUid == "guest" || currentUid.isBlank()) return
+
+        db.collection("usuarios")
+            .document(currentUid)
+            .set(mapOf("modoClaro" to claro), SetOptions.merge())
+    }
+
+    fun setIconosColorTema(usarColorTema: Boolean) {
+        _iconosColorTema.value = usarColorTema   // se aplica siempre
+
+        val currentUid = auth.currentUser?.uid ?: activeUserId ?: return
+        if (currentUid == "guest" || currentUid.isBlank()) return
+
+        db.collection("usuarios")
+            .document(currentUid)
+            .set(mapOf("iconosColorTema" to usarColorTema), SetOptions.merge())
     }
 
     override fun onCleared() {
