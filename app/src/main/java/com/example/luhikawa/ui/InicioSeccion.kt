@@ -139,7 +139,6 @@ fun LoginScreen(navController: NavController) {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-                        // Buscar datos en la colección "users" (o "users" según tu base de datos)
                         db.collection("users").document(user.uid).get()
                             .addOnSuccessListener { doc ->
                                 val nombreGuardado = doc.getString("nombreCompleto")
@@ -221,7 +220,7 @@ fun LoginScreen(navController: NavController) {
             onValueChange = { users = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Users o email", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Usuario o email", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
             textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
