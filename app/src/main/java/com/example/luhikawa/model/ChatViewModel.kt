@@ -37,6 +37,15 @@ class ChatViewModel : ViewModel() {
 
     private fun uidActual(): String? = FirebaseAuth.getInstance().currentUser?.uid
 
+    /** Cada modo tiene su propia colección. */
+    private fun coleccionActual(): String = when (modo) {
+        AppMode.TAREAS -> "tasks"
+        AppMode.HOGAR -> "home_tasks"
+        AppMode.MICROFINANZAS -> "finance_movements"
+    }
+
+    private val tiposMovimiento = listOf("Ingreso", "Gasto", "Ahorro", "Deuda", "Cobro pendiente")
+
     private val modeloGemini = GenerativeModel(
         modelName = "gemini-3.6-flash",
         apiKey = claveApi,
@@ -45,11 +54,15 @@ class ChatViewModel : ViewModel() {
                 "Te llamas Luhi. Eres la asistente inteligente oficial de la aplicación Luhikawa.\n" +
                         "Tu objetivo es ayudar al usuario a organizar sus registros según el MODO ACTUAL que se te indica en cada mensaje.\n" +
                         "Usa solo las categorías válidas del modo actual.\n\n" +
+                        "MODOS:\n" +
+                        "- tareas: tareas, hábitos y recordatorios personales.\n" +
+                        "- hogar: tareas de la casa.\n" +
+                        "- microfinanzas: movimientos de dinero. Cada movimiento lleva un tipo (Ingreso, Gasto, Ahorro, Deuda o Cobro pendiente) y un monto mayor a 0. Si el usuario no da el monto, pídeselo y NO incluyas el comando.\n\n" +
                         "INSTRUCCIONES PARA EJECUTAR ACCIONES CRUD:\n" +
                         "- Si el usuario te pide CREAR o AGREGAR algo, responde confirmando amablemente e incluye al final:\n" +
                         "  ACCION_CREAR: {\"title\": \"Nombre\", \"category\": \"Categoría válida\", \"dueDate\": \"AAAA-MM-DD\", \"amount\": 0}\n" +
                         "  (dueDate es opcional, solo si el usuario da una fecha. amount es solo para el modo microfinanzas.)\n\n" +
-                        "- Si te pide COMPLETAR o MARCAR COMO HECHO, responde confirmando e incluye al final:\n" +
+                        "- Si te pide COMPLETAR o MARCAR COMO HECHO (en microfinanzas: saldar), responde confirmando e incluye al final:\n" +
                         "  ACCION_COMPLETAR: {\"title\": \"Nombre\"}\n\n" +
                         "- Si te pide ELIMINAR o BORRAR, responde confirmando e incluye al final:\n" +
                         "  ACCION_ELIMINAR: {\"title\": \"Nombre\"}\n\n" +
@@ -87,16 +100,16 @@ class ChatViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val cfg = modo.config()
-                val resumenTareas = obtenerResumenFirestore()
+                val resumen = obtenerResumenFirestore()
 
-                val promptConContexto = buildString {
+                val prompt = buildString {
                     append("[Modo actual: ${modo.key} (${cfg.descripcionIA}). ")
                     append("Categorías válidas: ${cfg.categorias.joinToString(", ")}.]\n")
-                    if (resumenTareas.isNotBlank()) append("[Estado actual:\n$resumenTareas]\n")
+                    if (resumen.isNotBlank()) append("[Estado actual:\n$resumen]\n")
                     append("\nMensaje del usuario: $textoLimpio")
                 }
 
-                val respuesta = sesionChat.sendMessage(promptConContexto)
+                val respuesta = sesionChat.sendMessage(prompt)
                 val textoOriginal = respuesta.text ?: "No pude obtener una respuesta."
 
                 agregarMensajeLuhi(procesarComandosCrud(textoOriginal))
@@ -112,15 +125,16 @@ class ChatViewModel : ViewModel() {
         if (texto.contains("ACCION_CREAR:")) {
             val cmd = texto.substringAfter("ACCION_CREAR:")
             val titulo = extraerValor(cmd, "title")
-            if (titulo.isNotBlank()) {
+            val aviso = if (titulo.isNotBlank()) {
                 crearFirestore(
                     titulo = titulo,
                     categoria = extraerValor(cmd, "category"),
                     dueDate = extraerValor(cmd, "dueDate"),
                     monto = extraerNumero(cmd, "amount")
                 )
-            }
+            } else null
             texto = texto.substringBefore("ACCION_CREAR:").trim()
+            if (aviso != null) texto = "$texto\n\n$aviso".trim()
         }
 
         if (texto.contains("ACCION_COMPLETAR:")) {
@@ -144,34 +158,61 @@ class ChatViewModel : ViewModel() {
     } catch (e: Exception) { "" }
 
     private fun extraerNumero(texto: String, clave: String): Double? = try {
-        "\"$clave\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)".toRegex(RegexOption.IGNORE_CASE)
+        "\"$clave\"\\s*:\\s*\"?([0-9]+(?:\\.[0-9]+)?)\"?".toRegex(RegexOption.IGNORE_CASE)
             .find(texto)?.groupValues?.get(1)?.toDouble()
     } catch (e: Exception) { null }
 
-    /** Documentos del usuario actual que pertenecen al modo actual (sin "mode" = "tareas"). */
+    /** Documentos del usuario en la colección del modo actual. */
     private suspend fun documentosDelModo(): List<DocumentSnapshot> {
         val uid = uidActual() ?: return emptyList()
-        return db.collection("tasks").whereEqualTo("userId", uid).get().await().documents
-            .filter { (it.getString("mode")?.ifBlank { null } ?: "tareas") == modo.key }
+        val docs = db.collection(coleccionActual())
+            .whereEqualTo("userId", uid).get().await().documents
+
+        // En "tasks" pueden quedar registros viejos de otros modos
+        return if (modo == AppMode.TAREAS) {
+            docs.filter { (it.getString("mode")?.ifBlank { null } ?: "tareas") == "tareas" }
+        } else docs
     }
 
     private fun List<DocumentSnapshot>.buscarPorTitulo(titulo: String): DocumentSnapshot? =
         firstOrNull { it.getString("title").equals(titulo, ignoreCase = true) }
             ?: firstOrNull { it.getString("title")?.contains(titulo, ignoreCase = true) == true }
 
-    private suspend fun crearFirestore(titulo: String, categoria: String, dueDate: String, monto: Double?) {
-        try {
-            val uid = uidActual() ?: return
+    /** Devuelve un aviso para mostrar al usuario si no se pudo crear, o null si todo salió bien. */
+    private suspend fun crearFirestore(
+        titulo: String,
+        categoria: String,
+        dueDate: String,
+        monto: Double?
+    ): String? {
+        return try {
+            val uid = uidActual() ?: return "No pude guardarlo: no hay sesión iniciada."
             val cfg = modo.config()
             val categoriaFinal = if (categoria in cfg.categorias) categoria else cfg.categoriaInicial
+
+            // Microfinanzas exige monto y tipo válidos
+            if (modo == AppMode.MICROFINANZAS) {
+                if (monto == null || monto <= 0.0) {
+                    return "No lo guardé: falta el monto del movimiento. ¿De cuánto es?"
+                }
+                if (categoriaFinal !in tiposMovimiento) {
+                    return "No lo guardé: el tipo debe ser Ingreso, Gasto, Ahorro, Deuda o Cobro pendiente."
+                }
+            }
+
             val fechaValida = Regex("\\d{4}-\\d{2}-\\d{2}").matches(dueDate)
+            val meses = listOf("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+            val fechaLegible = if (fechaValida) {
+                val p = dueDate.split("-")
+                "${p[2].toInt()} ${meses[p[1].toInt() - 1]} ${p[0]}"
+            } else ""
 
             val nueva = mutableMapOf<String, Any>(
                 "userId" to uid,
                 "mode" to modo.key,
                 "title" to titulo,
                 "category" to categoriaFinal,
-                "date" to if (fechaValida) dueDate else "",
+                "date" to fechaLegible,
                 "dueDate" to if (fechaValida) dueDate else "",
                 "time" to "",
                 "importance" to "Media",
@@ -180,9 +221,11 @@ class ChatViewModel : ViewModel() {
             )
             if (modo == AppMode.MICROFINANZAS && monto != null) nueva["amount"] = monto
 
-            db.collection("tasks").add(nueva).await()
+            db.collection(coleccionActual()).add(nueva).await()
+            null
         } catch (e: Exception) {
             e.printStackTrace()
+            "No pude guardarlo: ${e.localizedMessage ?: "error desconocido"}"
         }
     }
 
@@ -208,13 +251,26 @@ class ChatViewModel : ViewModel() {
             val docs = documentosDelModo()
             if (docs.isEmpty()) return "No hay registros en este modo."
 
-            docs.mapIndexed { i, doc ->
+            val lineas = docs.mapIndexed { i, doc ->
                 val titulo = doc.getString("title") ?: "Sin título"
                 val categoria = doc.getString("category") ?: "General"
                 val completada = doc.getBoolean("completed") ?: false
-                val monto = doc.getDouble("amount")?.let { ", Monto: $it" } ?: ""
-                "${i + 1}. $titulo [Categoría: $categoria, Completada: $completada$monto]"
-            }.joinToString("\n")
+                val monto = (doc.get("amount") as? Number)?.toDouble()
+                    ?.let { ", Monto: $it" } ?: ""
+                val estadoTxt = if (modo == AppMode.MICROFINANZAS) "Saldado: $completada" else "Completada: $completada"
+                "${i + 1}. $titulo [Categoría: $categoria, $estadoTxt$monto]"
+            }
+
+            // En microfinanzas, un resumen para que la IA pueda responder "¿cuánto he gastado?"
+            if (modo == AppMode.MICROFINANZAS) {
+                fun suma(tipo: String) = docs
+                    .filter { it.getString("category") == tipo }
+                    .sumOf { (it.get("amount") as? Number)?.toDouble() ?: 0.0 }
+                val ingresos = suma("Ingreso")
+                val gastos = suma("Gasto")
+                lineas.joinToString("\n") +
+                        "\nTotales: Ingresos $ingresos, Gastos $gastos, Balance ${ingresos - gastos}"
+            } else lineas.joinToString("\n")
         } catch (e: Exception) {
             "No pude consultar los registros."
         }
