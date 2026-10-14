@@ -4,18 +4,18 @@ import com.example.luhikawa.model.activation.Activation
 class Neuron() {
     private var weight = 0.5
     private var result: Double = 0.0
-    private var breach: Double = 2.0
-    private val activation : Activation = Activation()
+    private var bias: Double = 2.0
+    private val activation = Activation()
 
     fun setDefault (){
         weight = 0.5
         result = 0.0
-        breach = 2.0
+        bias = 2.0
     }
 
     fun predict(data: Double):Double{
-        result = data * weight
-        return activation.digmoid(result)
+        result = (data * weight) + bias
+        return activation.sigmoid(result)
     }
 
     fun regression(error:Double) {

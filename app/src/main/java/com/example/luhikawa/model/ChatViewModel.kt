@@ -1,8 +1,11 @@
 package com.example.luhikawa.model
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.luhikawa.BuildConfig
+import com.example.luhikawa.domain.Chat
 import com.example.luhikawa.ui.mode.AppMode
 import com.example.luhikawa.ui.mode.config
 import com.google.ai.client.generativeai.GenerativeModel
@@ -29,6 +32,10 @@ data class EstadoChat(
 )
 
 class ChatViewModel : ViewModel() {
+    private val chat = Chat()
+    var conversationBot : Int = 0
+
+    private var geminiUse = false
     private val db = FirebaseFirestore.getInstance()
     private val claveApi = BuildConfig.ApiKey
 
@@ -70,39 +77,121 @@ class ChatViewModel : ViewModel() {
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun enviarMensaje(textoUsers: String) {
         val textoLimpio = textoUsers.trim()
         if (textoLimpio.isEmpty() || _estado.value.cargando) return
 
-        if (claveApi.isBlank()) {
-            agregarMensajeLuhi("Error: luhi esta perdido, intentalo mas tarde.")
-            return
-        }
 
-        _estado.value = _estado.value.copy(
-            mensajes = _estado.value.mensajes + MensajeChat(textoLimpio, deUsers = true),
-            cargando = true
-        )
+        if(geminiUse) {
 
-        viewModelScope.launch {
-            try {
-                val cfg = modo.config()
-                val resumenTareas = obtenerResumenFirestore()
-
-                val promptConContexto = buildString {
-                    append("[Modo actual: ${modo.key} (${cfg.descripcionIA}). ")
-                    append("Categorías válidas: ${cfg.categorias.joinToString(", ")}.]\n")
-                    if (resumenTareas.isNotBlank()) append("[Estado actual:\n$resumenTareas]\n")
-                    append("\nMensaje del usuario: $textoLimpio")
-                }
-
-                val respuesta = sesionChat.sendMessage(promptConContexto)
-                val textoOriginal = respuesta.text ?: "No pude obtener una respuesta."
-
-                agregarMensajeLuhi(procesarComandosCrud(textoOriginal))
-            } catch (e: Exception) {
-                agregarMensajeLuhi("Error al conectar con Luhi")
+            if (claveApi.isBlank()) {
+                agregarMensajeLuhi("Error: luhi esta perdido, intentalo mas tarde.")
+                return
             }
+
+            _estado.value = _estado.value.copy(
+                mensajes = _estado.value.mensajes + MensajeChat(textoLimpio, deUsers = true),
+                cargando = true
+            )
+
+            viewModelScope.launch {
+                try {
+                    val cfg = modo.config()
+                    val resumenTareas = obtenerResumenFirestore()
+
+                    val promptConContexto = buildString {
+                        append("[Modo actual: ${modo.key} (${cfg.descripcionIA}). ")
+                        append("Categorías válidas: ${cfg.categorias.joinToString(", ")}.]\n")
+                        if (resumenTareas.isNotBlank()) append("[Estado actual:\n$resumenTareas]\n")
+                        append("\nMensaje del usuario: $textoLimpio")
+                    }
+
+                    val respuesta = sesionChat.sendMessage(promptConContexto)
+                    val textoOriginal = respuesta.text ?: "No pude obtener una respuesta."
+
+                    agregarMensajeLuhi(procesarComandosCrud(textoOriginal))
+                } catch (e: Exception) {
+                    agregarMensajeLuhi("Error al conectar con Luhi")
+                }
+            }
+        }else {
+
+            if(textoLimpio.toIntOrNull() != null || conversationBot == 0 || chat.ask == 1) {
+
+                when (conversationBot) {
+                    0 -> {
+                        conversationBot = 1
+                        agregarMensajeLuhi(chat.greeting(), false)
+                    }
+
+                    1 -> {
+                        conversationBot = 2
+                        val selectionBot = textoLimpio.toInt()
+                        agregarMensajeLuhi(chat.message(selectionBot), false)
+                    }
+
+                    2 -> {
+                        if (chat.waitingData) {
+                            agregarMensajeLuhi(chat.dataCollector(textoLimpio), false)
+                            conversationBot = 0
+                        }
+
+                        if (chat.fail) {
+                            chat.fail = false
+                            conversationBot = 0
+                            agregarMensajeLuhi(".......................", false)
+                        }
+
+
+
+                        if (chat.ask == 2) {
+                            //llamar funcion lector de datos de firebase para calcular
+                        } else if (chat.ask == 3) {
+                            //llamar funcion lector de datos de firebase para calcular +2
+                        } else if (chat.ask == 4) {
+                            conversationBot = 3
+                        } else {
+
+                        }
+                    }
+
+                    3 -> {
+                        if (chat.ask == 4) {
+                            val confirm = textoLimpio.toInt()
+                            if (confirm == 1 || confirm == 2) {
+                                when (confirm) {
+                                    1 -> {
+                                        conversationBot = 0
+                                        chat.resetModel()
+                                        agregarMensajeLuhi("reseteo exitoso", false)
+                                        enviarMensaje("Hola")
+                                    }
+
+                                    2 -> {
+                                        agregarMensajeLuhi("reseteo cancelado", false)
+                                        conversationBot = 0
+                                        agregarMensajeLuhi("......................")
+                                        enviarMensaje("Hola")
+                                    }
+
+                                }
+                            } else {
+                                agregarMensajeLuhi("el numero digitado no se encuentr como opcion, digite 1 para borrar y 2 para cancelar")
+                                agregarMensajeLuhi("intente de nuevo...")
+                                conversationBot = 0
+                                enviarMensaje(".")
+                            }
+
+                        }
+                    }
+
+                }
+            }else{
+                agregarMensajeLuhi("Digita una opcion correcta...", false )
+                agregarMensajeLuhi("Intentalo de nuevo", false)
+            }
+
         }
     }
 

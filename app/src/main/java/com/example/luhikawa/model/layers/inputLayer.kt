@@ -1,26 +1,43 @@
 package com.example.luhikawa.model.layers
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
+import kotlin.math.abs
+
 class InputLayer {
 
-    fun validatedData(dataInputPackage : List<Any>) : Array<Double> {
-        for (data in dataInputPackage){
+    @RequiresApi(Build.VERSION_CODES.O)
+
+    fun validatedData(dataInputPackage: List<Any>): Array<Double> {
+
+        val dataPackage = dataInputPackage.map { data ->
+
             when (data) {
+
                 is Int -> {
-
-                }
-                is String -> {
-
+                    data.toDouble()
                 }
                 is Double -> {
+                    data
+                }
+                is LocalDate -> {
+                    val actual = LocalDate.now()
 
+                    val dias = abs(
+                        ChronoUnit.DAYS.between(actual, data)
+                    )
+
+                    (10 - dias).coerceIn(0, 10).toDouble()
                 }
                 else -> {
-                    println("...")
+                    0.0
                 }
             }
         }
-        val dataPackage = dataInputPackage.map {it as Double }.toTypedArray()
-        return dataPackage
+
+        return dataPackage.toTypedArray()
     }
 
 }
