@@ -37,7 +37,6 @@ class ChatViewModel : ViewModel() {
 
     private fun uidActual(): String? = FirebaseAuth.getInstance().currentUser?.uid
 
-    /** Cada modo tiene su propia colección. */
     private fun coleccionActual(): String = when (modo) {
         AppMode.TAREAS -> "tasks"
         AppMode.HOGAR -> "home_tasks"
@@ -162,7 +161,6 @@ class ChatViewModel : ViewModel() {
             .find(texto)?.groupValues?.get(1)?.toDouble()
     } catch (e: Exception) { null }
 
-    /** Documentos del usuario en la colección del modo actual. */
     private suspend fun documentosDelModo(): List<DocumentSnapshot> {
         val uid = uidActual() ?: return emptyList()
         val docs = db.collection(coleccionActual())
@@ -178,7 +176,6 @@ class ChatViewModel : ViewModel() {
         firstOrNull { it.getString("title").equals(titulo, ignoreCase = true) }
             ?: firstOrNull { it.getString("title")?.contains(titulo, ignoreCase = true) == true }
 
-    /** Devuelve un aviso para mostrar al usuario si no se pudo crear, o null si todo salió bien. */
     private suspend fun crearFirestore(
         titulo: String,
         categoria: String,
@@ -190,7 +187,6 @@ class ChatViewModel : ViewModel() {
             val cfg = modo.config()
             val categoriaFinal = if (categoria in cfg.categorias) categoria else cfg.categoriaInicial
 
-            // Microfinanzas exige monto y tipo válidos
             if (modo == AppMode.MICROFINANZAS) {
                 if (monto == null || monto <= 0.0) {
                     return "No lo guardé: falta el monto del movimiento. ¿De cuánto es?"

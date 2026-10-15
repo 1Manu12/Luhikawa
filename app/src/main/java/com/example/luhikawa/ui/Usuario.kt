@@ -155,7 +155,6 @@ class MainActivityPerfil : FragmentActivity() {
 
             val themeViewModel: ThemeViewModel = viewModel(key = currentUsersId)
 
-            // MODO: un solo ViewModel compartido por todas las pantallas
             val modeViewModel: ModeViewModel = viewModel(
                 key = "mode_$currentUsersId",
                 factory = ModeViewModel.factory(application, currentUsersId)
@@ -230,7 +229,6 @@ class MainActivityPerfil : FragmentActivity() {
                                     }
                                 )
                             ) { backStackEntry ->
-                                // Ignora el placeholder literal "{taskId}" del botón central
                                 val taskId = backStackEntry.arguments?.getString("taskId")
                                     ?.takeUnless { it.isBlank() || it == "{taskId}" }
                                 RecordatorioScreen(
@@ -334,14 +332,14 @@ fun PerfilScreen(
     var passActual by remember { mutableStateOf("") }
     var nuevaPass by remember { mutableStateOf("") }
 
-    // ---------- Modo de la aplicación ----------
+//Modo
     val modoApp = modeViewModel.mode
 
     fun cambiarModo(nuevoModo: AppMode) {
         modeViewModel.cambiarModo(nuevoModo)
         Toast.makeText(context, nuevoModo.config().toastCambioModo, Toast.LENGTH_SHORT).show()
     }
-    // -------------------------------------------
+
 
     val activeStoredAccount = remember(cuentasGuardadas, selectedUid, currentUser) {
         cuentasGuardadas.find { it.uid == selectedUid }

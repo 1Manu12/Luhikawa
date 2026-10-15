@@ -34,8 +34,7 @@ import com.google.firebase.firestore.SetOptions
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
-// ═════════════════════ TAREAS (predeterminado) → "tasks" ═════════════════════
-
+//Tareas
 class TaskRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -131,8 +130,7 @@ class TaskRepository(
     }
 }
 
-// ═════════════════════ HOGAR → "home_tasks" ═════════════════════
-
+//Hogar
 class HomeTaskRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -222,8 +220,7 @@ class HomeTaskRepository(
     }
 }
 
-// ═════════════════════ MICROFINANZAS → "finance_movements" ═════════════════════
-
+//Microfinanzas
 class MicrofinanzasRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -319,8 +316,7 @@ class MicrofinanzasRepository(
     }
 }
 
-// ═════════════════════ USUARIOS ═════════════════════
-
+//Usuarios
 class UserRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
@@ -550,8 +546,7 @@ class UserRepository(
     }
 }
 
-// ═════════════════════ AVATAR Y HELPERS ═════════════════════
-
+//Avatar
 @Composable
 fun ProfileAvatar(
     userId: String,

@@ -116,7 +116,6 @@ fun CalendarScreen(
     val context = LocalContext.current
     val auth = remember { FirebaseAuth.getInstance() }
 
-    // ── Fuente de datos según el modo (cada modo usa SU colección) ──
     val taskRepo = remember { TaskRepository() }
     val homeRepo = remember { HomeTaskRepository() }
     val financeRepo = remember { MicrofinanzasRepository() }
@@ -150,7 +149,7 @@ fun CalendarScreen(
         }
     }
 
-    // Se reinicia al cambiar de modo, así nunca se mezclan datos
+//Se reinicia al cambiar de modo
     var tareas by remember(modo) { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
     var fechaSeleccionada by remember(modo) { mutableStateOf<LocalDate?>(null) }
 
@@ -205,7 +204,6 @@ fun CalendarScreen(
     @Composable
     fun colorParaFecha(fecha: LocalDate): Color? {
         val tareasDelDia = tareasPorFecha[fecha] ?: return null
-        // MODO: RecordatorioScreen guarda "importance" ("Alta/Media/Baja"), no "important"
         val maxImportante = tareasDelDia.any {
             it["important"] as? Boolean == true || it["importance"] == "Alta"
         }
@@ -352,7 +350,7 @@ fun CalendarScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        config.tituloLista,   // MODO (antes: "Tareas asignadas")
+                        config.tituloLista,
                         style = TextStyle(
                             fontFamily = InriaSerif,
                             fontSize = 20.sp,
@@ -394,7 +392,7 @@ fun CalendarScreen(
                     }
                     val textoBase =
                         if (infoTiempo.isNotEmpty()) "$titulo - $infoTiempo" else titulo
-                    // MODO: en microfinanzas se muestra el monto
+//Muestra de monto
                     val textoConFecha =
                         if (monto != null) "$textoBase • \$%,.2f".format(monto) else textoBase
 
@@ -427,7 +425,6 @@ fun CalendarScreen(
                                 }
                             },
                             onClick = {
-                                // MODO: tocar abre la edición
                                 if (id != null) navController.navigate("recordatorio?taskId=$id")
                             }
                         )

@@ -162,7 +162,6 @@ fun Greeting(
     val modo = modeViewModel.mode
     val config = modo.config()
 
-    // ── Fuente de datos según el modo (cada modo usa SU colección) ──
     val taskRepo = remember { TaskRepository() }
     val homeRepo = remember { HomeTaskRepository() }
     val financeRepo = remember { MicrofinanzasRepository() }
@@ -571,8 +570,6 @@ fun Greeting(
                 ) {
                     if (frasesActivas) {
                         ImagenDerechaTextoIzquierda(frase = fraseDelDia)
-                    } else {
-                        ImagenDerechaTextoIzquierda()
                     }
 
                     DropdownMenu(
