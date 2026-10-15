@@ -43,7 +43,6 @@ class AlarmReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Intent para abrir la app al tocar la notificación
         val clickIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -52,7 +51,6 @@ class AlarmReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Estilo expandible para mensajes largos y directos
         val bigTextStyle = NotificationCompat.BigTextStyle()
             .bigText(message)
 
@@ -65,9 +63,6 @@ class AlarmReceiver : BroadcastReceiver() {
             .setSound(soundUri)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
-        // Sin botones ni colores extra: limpio, serio y directo al grano
-
-        // Usamos el timestamp actual para que cada recordatorio llegue como una notificación nueva e insistente
         notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 }

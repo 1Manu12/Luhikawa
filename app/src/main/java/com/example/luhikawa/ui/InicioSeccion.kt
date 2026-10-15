@@ -60,7 +60,6 @@ class MainActivityLogin : ComponentActivity() {
         setContent {
             val auth = remember { FirebaseAuth.getInstance() }
 
-            // 1. Manejo del ID del users activo o 'guest'
             var currentUserId by remember { mutableStateOf(auth.currentUser?.uid ?: "guest") }
 
             DisposableEffect(auth) {
@@ -73,17 +72,13 @@ class MainActivityLogin : ComponentActivity() {
                 }
             }
 
-            // 2. Instancia reactiva del ViewModel usando el UID como key independiente
             val themeViewModel: ThemeViewModel = viewModel(key = currentUserId)
 
             LaunchedEffect(currentUserId) {
                 themeViewModel.setUser(currentUserId)
             }
-
-            // 3. Escuchar el color actual del tema de la cuenta
             val currentThemeColor by themeViewModel.appThemeColor.collectAsState()
 
-            // 4. Aplicar el tema dinámico
             luhikawaTheme(appTheme = currentThemeColor) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -139,7 +134,6 @@ fun LoginScreen(navController: NavController) {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-                        // Buscar datos en la colección "users" (o "users" según tu base de datos)
                         db.collection("users").document(user.uid).get()
                             .addOnSuccessListener { doc ->
                                 val nombreGuardado = doc.getString("nombreCompleto")
@@ -221,7 +215,7 @@ fun LoginScreen(navController: NavController) {
             onValueChange = { users = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Users o email", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Usuario o email", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
             textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,

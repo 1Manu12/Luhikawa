@@ -74,7 +74,6 @@ fun AiScreen(
     modo: AppMode = AppMode.TAREAS,
     viewModel: ChatViewModel = viewModel()
 ) {
-    // Le avisa al ViewModel del chat en qué modo está la app
     LaunchedEffect(modo) { viewModel.setModo(modo) }
 
     val estado by viewModel.estado.collectAsState()

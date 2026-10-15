@@ -139,7 +139,7 @@ fun RegistroScreen(navController: NavController) {
             onValueChange = { users = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Users", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Usuario", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
             textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
