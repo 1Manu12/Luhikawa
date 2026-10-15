@@ -237,7 +237,7 @@ fun RectanguloCompletadoPapelera(
 @Composable
 fun NuevoRecordatorioHeader(
     isEditing: Boolean = false,
-    tituloNuevo: String = "NUEVO RECORDATORIO"
+    tituloNuevo: String = "NUEVA TAREA"
 ) {
     Box(
         modifier = Modifier
@@ -248,7 +248,7 @@ fun NuevoRecordatorioHeader(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = if (isEditing) "EDITAR RECORDATORIO" else tituloNuevo,
+            text = if (isEditing) "EDITAR TAREA" else tituloNuevo,
             style = TextStyle(
                 fontFamily = InriaSerif,
                 fontSize = 24.sp,
