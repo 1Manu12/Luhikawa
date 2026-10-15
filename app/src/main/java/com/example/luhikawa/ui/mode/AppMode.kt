@@ -19,7 +19,7 @@ data class ModeUiConfig(
     val etiquetaClasificacion: String,
     val categorias: List<String>,
     val categoriaInicial: String,
-    val categoriaConFrecuencia: String?,   // null = sin selector de frecuencia
+    val categoriaConFrecuencia: String?,
     val mostrarMonto: Boolean,
     val etiquetaMonto: String,
     val textoGuardar: String,
@@ -32,8 +32,8 @@ data class ModeUiConfig(
 
 fun AppMode.config(): ModeUiConfig = when (this) {
     AppMode.TAREAS -> ModeUiConfig(
-        tituloNuevo = "NUEVO RECORDATORIO",
-        etiquetaNombre = "Nombre del recordatorio",
+        tituloNuevo = "NUEVA TAREA",
+        etiquetaNombre = "Nombre de la tarea",
         placeholderNombre = "Ej: Cita con el dentista",
         etiquetaClasificacion = "Clasificación",
         categorias = CategoriasTareas,

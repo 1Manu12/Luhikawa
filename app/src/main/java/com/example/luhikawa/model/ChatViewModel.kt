@@ -1,18 +1,18 @@
 package com.example.luhikawa.model
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.luhikawa.BuildConfig
-import com.example.luhikawa.domain.Chat
 import com.example.luhikawa.ui.mode.AppMode
 import com.example.luhikawa.ui.mode.config
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.Content
 import com.google.ai.client.generativeai.type.content
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,10 +32,13 @@ data class EstadoChat(
 )
 
 class ChatViewModel : ViewModel() {
+<<<<<<< HEAD
     private val chat = Chat()
     var conversationBot : Int = 0
 
     var geminiUse = false
+=======
+>>>>>>> d80ad8056c119e0411e93dcfab49ae3f2ff216b4
     private val db = FirebaseFirestore.getInstance()
     private val claveApi = BuildConfig.ApiKey
 
@@ -44,28 +47,113 @@ class ChatViewModel : ViewModel() {
 
     private fun uidActual(): String? = FirebaseAuth.getInstance().currentUser?.uid
 
-    private val modeloGemini = GenerativeModel(
-        modelName = "gemini-3.6-flash",
-        apiKey = claveApi,
-        systemInstruction = content {
-            text(
-                "Te llamas Luhi. Eres la asistente inteligente oficial de la aplicación Luhikawa.\n" +
-                        "Tu objetivo es ayudar al usuario a organizar sus registros según el MODO ACTUAL que se te indica en cada mensaje.\n" +
-                        "Usa solo las categorías válidas del modo actual.\n\n" +
-                        "INSTRUCCIONES PARA EJECUTAR ACCIONES CRUD:\n" +
-                        "- Si el usuario te pide CREAR o AGREGAR algo, responde confirmando amablemente e incluye al final:\n" +
-                        "  ACCION_CREAR: {\"title\": \"Nombre\", \"category\": \"Categoría válida\", \"dueDate\": \"AAAA-MM-DD\", \"amount\": 0}\n" +
-                        "  (dueDate es opcional, solo si el usuario da una fecha. amount es solo para el modo microfinanzas.)\n\n" +
-                        "- Si te pide COMPLETAR o MARCAR COMO HECHO, responde confirmando e incluye al final:\n" +
-                        "  ACCION_COMPLETAR: {\"title\": \"Nombre\"}\n\n" +
-                        "- Si te pide ELIMINAR o BORRAR, responde confirmando e incluye al final:\n" +
-                        "  ACCION_ELIMINAR: {\"title\": \"Nombre\"}\n\n" +
-                        "- Si el usuario solo pregunta o conversa, responde normalmente sin comandos."
-            )
-        }
-    )
+    private fun coleccionActual(): String = when (modo) {
+        AppMode.TAREAS -> "tasks"
+        AppMode.HOGAR -> "home_tasks"
+        AppMode.MICROFINANZAS -> "finance_movements"
+    }
 
-    private val sesionChat = modeloGemini.startChat()
+    private val tiposMovimiento = listOf("Ingreso", "Gasto", "Ahorro", "Deuda", "Cobro pendiente")
+
+
+    private val instruccionSistema = content {
+        text(
+            "Te llamas Luhi. Eres la asistente inteligente oficial de la aplicación Luhikawa.\n" +
+                    "Tu objetivo es ayudar al usuario a organizar sus registros según el MODO ACTUAL que se te indica en cada mensaje.\n" +
+                    "Usa solo las categorías válidas del modo actual.\n\n" +
+                    "MODOS:\n" +
+                    "- tareas: tareas, hábitos y recordatorios personales.\n" +
+                    "- hogar: tareas de la casa.\n" +
+                    "- microfinanzas: movimientos de dinero. Cada movimiento lleva un tipo (Ingreso, Gasto, Ahorro, Deuda o Cobro pendiente) y un monto mayor a 0. Si el usuario no da el monto, pídeselo y NO incluyas el comando.\n\n" +
+                    "INSTRUCCIONES PARA EJECUTAR ACCIONES CRUD:\n" +
+                    "- Si el usuario te pide CREAR o AGREGAR algo, responde confirmando amablemente e incluye al final:\n" +
+                    "  ACCION_CREAR: {\"title\": \"Nombre\", \"category\": \"Categoría válida\", \"dueDate\": \"AAAA-MM-DD\", \"amount\": 0}\n" +
+                    "  (dueDate es opcional, solo si el usuario da una fecha. amount es solo para el modo microfinanzas.)\n\n" +
+                    "- Si te pide COMPLETAR o MARCAR COMO HECHO (en microfinanzas: saldar), responde confirmando e incluye al final:\n" +
+                    "  ACCION_COMPLETAR: {\"title\": \"Nombre\"}\n\n" +
+                    "- Si te pide ELIMINAR o BORRAR, responde confirmando e incluye al final:\n" +
+                    "  ACCION_ELIMINA0.R: {\"title\": \"Nombre\"}\n\n" +
+                    "- Si el usuario solo pregunta o conversa, responde normalmente sin comandos."
+        )
+    }
+
+    private fun crearModelo(nombre: String) = GenerativeModel(
+        modelName = nombre,
+        apiKey = claveApi,
+        systemInstruction = instruccionSistema
+    )
+    private val modelos: List<GenerativeModel> by lazy {
+        listOf(
+            crearModelo("gemini-3.8-flash"),
+        )
+    }
+
+    // Historial propio: así el modelo de respaldo conserva el contexto de la conversación.
+    private val historial = mutableListOf<Content>()
+
+    private val maxIntentosPorModelo = 3
+    private val esperaInicialMs = 1500L
+
+    private fun esErrorReintentable(e: Throwable): Boolean {
+        val msg = e.message.orEmpty()
+        return "503" in msg ||
+                "429" in msg ||
+                "UNAVAILABLE" in msg ||
+                "high demand" in msg ||
+                "overloaded" in msg ||
+                "RESOURCE_EXHAUSTED" in msg ||
+                "GRpcError" in msg ||
+                "timeout" in msg.lowercase() ||
+                e is java.io.IOException
+    }
+
+    private suspend fun enviarConRespaldo(prompt: String): String {
+        var ultimoError: Throwable? = null
+
+        for (modelo in modelos) {
+            var espera = esperaInicialMs
+            for (intento in 1..maxIntentosPorModelo) {
+                try {
+                    val chat = modelo.startChat(history = historial.toList())
+                    val respuesta = chat.sendMessage(prompt)
+                    val texto = respuesta.text ?: "No pude obtener una respuesta."
+
+                    // Solo guardamos el turno si salió bien
+                    historial += content(role = "user") { text(prompt) }
+                    historial += content(role = "model") { text(texto) }
+                    return texto
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    ultimoError = e
+                    if (!esErrorReintentable(e)) throw e
+                    if (intento < maxIntentosPorModelo) {
+                        delay(espera)
+                        espera *= 2
+                    }
+                }
+            }
+        }
+
+        throw ultimoError ?: IllegalStateException("Error desconocido")
+    }
+
+    private fun mensajeDeError(e: Throwable): String {
+        val msg = e.message.orEmpty()
+        val saturado = "503" in msg || "high demand" in msg || "UNAVAILABLE" in msg ||
+                "429" in msg || "RESOURCE_EXHAUSTED" in msg
+        return when {
+            saturado ->
+                "Luhi está muy ocupada ahora mismo. Inténtalo de nuevo en unos segundos."
+            e is java.io.IOException ->
+                "No pude conectarme. Revisa tu conexión a internet e inténtalo de nuevo."
+            BuildConfig.DEBUG ->
+                "Error al conectar con Luhi. Detalle: ${msg.take(200)}"
+            else ->
+                "Ocurrió un error al conectar con Luhi. Inténtalo más tarde."
+        }
+    }
+
 
     private val _estado = MutableStateFlow(EstadoChat())
     val estado: StateFlow<EstadoChat> = _estado.asStateFlow()
@@ -77,44 +165,41 @@ class ChatViewModel : ViewModel() {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun enviarMensaje(textoUsers: String) {
         val textoLimpio = textoUsers.trim()
         if (textoLimpio.isEmpty() || _estado.value.cargando) return
 
+        if (claveApi.isBlank()) {
+            agregarMensajeLuhi("Error: luhi esta perdido, intentalo mas tarde.")
+            return
+        }
 
-        if(geminiUse) {
+        _estado.value = _estado.value.copy(
+            mensajes = _estado.value.mensajes + MensajeChat(textoLimpio, deUsers = true),
+            cargando = true
+        )
 
-            if (claveApi.isBlank()) {
-                agregarMensajeLuhi("Error: luhi esta perdido, intentalo mas tarde.")
-                return
-            }
+        viewModelScope.launch {
+            try {
+                val cfg = modo.config()
+                val resumen = obtenerResumenFirestore()
 
-            _estado.value = _estado.value.copy(
-                mensajes = _estado.value.mensajes + MensajeChat(textoLimpio, deUsers = true),
-                cargando = true
-            )
-
-            viewModelScope.launch {
-                try {
-                    val cfg = modo.config()
-                    val resumenTareas = obtenerResumenFirestore()
-
-                    val promptConContexto = buildString {
-                        append("[Modo actual: ${modo.key} (${cfg.descripcionIA}). ")
-                        append("Categorías válidas: ${cfg.categorias.joinToString(", ")}.]\n")
-                        if (resumenTareas.isNotBlank()) append("[Estado actual:\n$resumenTareas]\n")
-                        append("\nMensaje del usuario: $textoLimpio")
-                    }
-
-                    val respuesta = sesionChat.sendMessage(promptConContexto)
-                    val textoOriginal = respuesta.text ?: "No pude obtener una respuesta."
-
-                    agregarMensajeLuhi(procesarComandosCrud(textoOriginal))
-                } catch (e: Exception) {
-                    agregarMensajeLuhi("Error al conectar con Luhi")
+                val prompt = buildString {
+                    append("[Modo actual: ${modo.key} (${cfg.descripcionIA}). ")
+                    append("Categorías válidas: ${cfg.categorias.joinToString(", ")}.]\n")
+                    if (resumen.isNotBlank()) append("[Estado actual:\n$resumen]\n")
+                    append("\nMensaje del usuario: $textoLimpio")
                 }
+
+                val textoOriginal = enviarConRespaldo(prompt)
+                agregarMensajeLuhi(procesarComandosCrud(textoOriginal))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                e.printStackTrace()
+                agregarMensajeLuhi(mensajeDeError(e))
             }
+<<<<<<< HEAD
         }else {
 
             if(textoLimpio.toIntOrNull() != null || conversationBot == 0 || chat.ask == 1) {
@@ -193,8 +278,11 @@ class ChatViewModel : ViewModel() {
                 agregarMensajeLuhi("Intentalo de nuevo", false)
             }
 
+=======
+>>>>>>> d80ad8056c119e0411e93dcfab49ae3f2ff216b4
         }
     }
+
 
     private suspend fun procesarComandosCrud(textoOriginal: String): String {
         var texto = textoOriginal
@@ -202,15 +290,16 @@ class ChatViewModel : ViewModel() {
         if (texto.contains("ACCION_CREAR:")) {
             val cmd = texto.substringAfter("ACCION_CREAR:")
             val titulo = extraerValor(cmd, "title")
-            if (titulo.isNotBlank()) {
+            val aviso = if (titulo.isNotBlank()) {
                 crearFirestore(
                     titulo = titulo,
                     categoria = extraerValor(cmd, "category"),
                     dueDate = extraerValor(cmd, "dueDate"),
                     monto = extraerNumero(cmd, "amount")
                 )
-            }
+            } else null
             texto = texto.substringBefore("ACCION_CREAR:").trim()
+            if (aviso != null) texto = "$texto\n\n$aviso".trim()
         }
 
         if (texto.contains("ACCION_COMPLETAR:")) {
@@ -234,34 +323,59 @@ class ChatViewModel : ViewModel() {
     } catch (e: Exception) { "" }
 
     private fun extraerNumero(texto: String, clave: String): Double? = try {
-        "\"$clave\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)".toRegex(RegexOption.IGNORE_CASE)
+        "\"$clave\"\\s*:\\s*\"?([0-9]+(?:\\.[0-9]+)?)\"?".toRegex(RegexOption.IGNORE_CASE)
             .find(texto)?.groupValues?.get(1)?.toDouble()
     } catch (e: Exception) { null }
 
-    /** Documentos del usuario actual que pertenecen al modo actual (sin "mode" = "tareas"). */
+
     private suspend fun documentosDelModo(): List<DocumentSnapshot> {
         val uid = uidActual() ?: return emptyList()
-        return db.collection("tasks").whereEqualTo("userId", uid).get().await().documents
-            .filter { (it.getString("mode")?.ifBlank { null } ?: "tareas") == modo.key }
+        val docs = db.collection(coleccionActual())
+            .whereEqualTo("userId", uid).get().await().documents
+
+        // En "tasks" pueden quedar registros viejos de otros modos
+        return if (modo == AppMode.TAREAS) {
+            docs.filter { (it.getString("mode")?.ifBlank { null } ?: "tareas") == "tareas" }
+        } else docs
     }
 
     private fun List<DocumentSnapshot>.buscarPorTitulo(titulo: String): DocumentSnapshot? =
         firstOrNull { it.getString("title").equals(titulo, ignoreCase = true) }
             ?: firstOrNull { it.getString("title")?.contains(titulo, ignoreCase = true) == true }
 
-    private suspend fun crearFirestore(titulo: String, categoria: String, dueDate: String, monto: Double?) {
-        try {
-            val uid = uidActual() ?: return
+    private suspend fun crearFirestore(
+        titulo: String,
+        categoria: String,
+        dueDate: String,
+        monto: Double?
+    ): String? {
+        return try {
+            val uid = uidActual() ?: return "No pude guardarlo: no hay sesión iniciada."
             val cfg = modo.config()
             val categoriaFinal = if (categoria in cfg.categorias) categoria else cfg.categoriaInicial
+
+            if (modo == AppMode.MICROFINANZAS) {
+                if (monto == null || monto <= 0.0) {
+                    return "No lo guardé: falta el monto del movimiento. ¿De cuánto es?"
+                }
+                if (categoriaFinal !in tiposMovimiento) {
+                    return "No lo guardé: el tipo debe ser Ingreso, Gasto, Ahorro, Deuda o Cobro pendiente."
+                }
+            }
+
             val fechaValida = Regex("\\d{4}-\\d{2}-\\d{2}").matches(dueDate)
+            val meses = listOf("Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+            val fechaLegible = if (fechaValida) {
+                val p = dueDate.split("-")
+                "${p[2].toInt()} ${meses[p[1].toInt() - 1]} ${p[0]}"
+            } else ""
 
             val nueva = mutableMapOf<String, Any>(
                 "userId" to uid,
                 "mode" to modo.key,
                 "title" to titulo,
                 "category" to categoriaFinal,
-                "date" to if (fechaValida) dueDate else "",
+                "date" to fechaLegible,
                 "dueDate" to if (fechaValida) dueDate else "",
                 "time" to "",
                 "importance" to "Media",
@@ -270,15 +384,21 @@ class ChatViewModel : ViewModel() {
             )
             if (modo == AppMode.MICROFINANZAS && monto != null) nueva["amount"] = monto
 
-            db.collection("tasks").add(nueva).await()
+            db.collection(coleccionActual()).add(nueva).await()
+            null
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             e.printStackTrace()
+            "No pude guardarlo: ${e.localizedMessage ?: "error desconocido"}"
         }
     }
 
     private suspend fun completarFirestore(titulo: String) {
         try {
             documentosDelModo().buscarPorTitulo(titulo)?.reference?.update("completed", true)?.await()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -287,6 +407,8 @@ class ChatViewModel : ViewModel() {
     private suspend fun eliminarFirestore(titulo: String) {
         try {
             documentosDelModo().buscarPorTitulo(titulo)?.reference?.delete()?.await()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -298,13 +420,28 @@ class ChatViewModel : ViewModel() {
             val docs = documentosDelModo()
             if (docs.isEmpty()) return "No hay registros en este modo."
 
-            docs.mapIndexed { i, doc ->
+            val lineas = docs.mapIndexed { i, doc ->
                 val titulo = doc.getString("title") ?: "Sin título"
                 val categoria = doc.getString("category") ?: "General"
                 val completada = doc.getBoolean("completed") ?: false
-                val monto = doc.getDouble("amount")?.let { ", Monto: $it" } ?: ""
-                "${i + 1}. $titulo [Categoría: $categoria, Completada: $completada$monto]"
-            }.joinToString("\n")
+                val monto = (doc.get("amount") as? Number)?.toDouble()
+                    ?.let { ", Monto: $it" } ?: ""
+                val estadoTxt = if (modo == AppMode.MICROFINANZAS) "Saldado: $completada" else "Completada: $completada"
+                "${i + 1}. $titulo [Categoría: $categoria, $estadoTxt$monto]"
+            }
+
+            // En microfinanzas, un resumen para que la IA pueda responder "¿cuánto he gastado?"
+            if (modo == AppMode.MICROFINANZAS) {
+                fun suma(tipo: String) = docs
+                    .filter { it.getString("category") == tipo }
+                    .sumOf { (it.get("amount") as? Number)?.toDouble() ?: 0.0 }
+                val ingresos = suma("Ingreso")
+                val gastos = suma("Gasto")
+                lineas.joinToString("\n") +
+                        "\nTotales: Ingresos $ingresos, Gastos $gastos, Balance ${ingresos - gastos}"
+            } else lineas.joinToString("\n")
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             "No pude consultar los registros."
         }

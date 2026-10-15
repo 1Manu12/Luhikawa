@@ -68,11 +68,9 @@ fun RecordatorioScreen(
     taskId: String? = null,
     modeViewModel: ModeViewModel = rememberModeViewModel()
 ) {
-    // Ignora el placeholder literal "{taskId}" (sirve desde cualquier activity)
     @Suppress("NAME_SHADOWING")
     val taskId = taskId?.takeUnless { it.isBlank() || it == "{taskId}" }
 
-    // Al editar se usa el modo de la tarea guardada; al crear, el modo actual de la app
     var modoDeLaTarea by remember { mutableStateOf<AppMode?>(null) }
     val modo = modoDeLaTarea ?: modeViewModel.mode
     val config = modo.config()
@@ -94,7 +92,6 @@ fun RecordatorioScreen(
     var selectedCategory by remember { mutableStateOf(config.categoriaInicial) }
     var selectedFrequency by remember { mutableStateOf("Todos los días") }
 
-    // ── Repositorios: cada modo usa SU colección (la misma que lee el index) ──
     val taskRepo = remember { TaskRepository() }
     val homeRepo = remember { HomeTaskRepository() }
     val financeRepo = remember { MicrofinanzasRepository() }
@@ -136,7 +133,6 @@ fun RecordatorioScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
-    // En una tarea NUEVA, si cambia el modo se reinicia la categoría
     LaunchedEffect(modo) {
         if (taskId.isNullOrEmpty()) selectedCategory = config.categoriaInicial
     }

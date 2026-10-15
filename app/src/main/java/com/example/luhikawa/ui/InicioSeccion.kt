@@ -60,7 +60,6 @@ class MainActivityLogin : ComponentActivity() {
         setContent {
             val auth = remember { FirebaseAuth.getInstance() }
 
-            // 1. Manejo del ID del users activo o 'guest'
             var currentUserId by remember { mutableStateOf(auth.currentUser?.uid ?: "guest") }
 
             DisposableEffect(auth) {
@@ -73,17 +72,13 @@ class MainActivityLogin : ComponentActivity() {
                 }
             }
 
-            // 2. Instancia reactiva del ViewModel usando el UID como key independiente
             val themeViewModel: ThemeViewModel = viewModel(key = currentUserId)
 
             LaunchedEffect(currentUserId) {
                 themeViewModel.setUser(currentUserId)
             }
-
-            // 3. Escuchar el color actual del tema de la cuenta
             val currentThemeColor by themeViewModel.appThemeColor.collectAsState()
 
-            // 4. Aplicar el tema dinámico
             luhikawaTheme(appTheme = currentThemeColor) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -119,6 +114,11 @@ fun LoginScreen(navController: NavController) {
     var isLoading by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
+    // Recuperación de contraseña
+    var showRecuperarDialog by remember { mutableStateOf(false) }
+    var emailRecuperar by remember { mutableStateOf("") }
+    var isSendingReset by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val auth = remember { FirebaseAuth.getInstance() }
@@ -139,7 +139,6 @@ fun LoginScreen(navController: NavController) {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-                        // Buscar datos en la colección "users" (o "users" según tu base de datos)
                         db.collection("users").document(user.uid).get()
                             .addOnSuccessListener { doc ->
                                 val nombreGuardado = doc.getString("nombreCompleto")
@@ -184,6 +183,28 @@ fun LoginScreen(navController: NavController) {
             }
     }
 
+    fun enviarCorreoRecuperacion(email: String) {
+        isSendingReset = true
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                isSendingReset = false
+                if (task.isSuccessful) {
+                    showRecuperarDialog = false
+                    Toast.makeText(
+                        context,
+                        "Si el correo está registrado, recibirás un enlace para restablecer tu contraseña",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "No se pudo enviar el correo: ${task.exception?.localizedMessage}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -221,7 +242,7 @@ fun LoginScreen(navController: NavController) {
             onValueChange = { users = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text("Users o email", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
+                Text("Usuario o email", style = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 18.sp))
             },
             textStyle = TextStyle(fontFamily = InriaSerif, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp),
             singleLine = true,
@@ -398,7 +419,17 @@ fun LoginScreen(navController: NavController) {
 
         Text(
             text = "¿Olvidaste tu contraseña?",
-            style = TextStyle(fontFamily = InriaSerif, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f), textAlign = TextAlign.Center)
+            style = TextStyle(
+                fontFamily = InriaSerif,
+                fontSize = 18.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            ),
+            modifier = Modifier.clickable {
+                // Si ya escribió un correo en el login, lo reutilizamos
+                emailRecuperar = if (users.contains("@")) users.trim() else ""
+                showRecuperarDialog = true
+            }
         )
 
         Spacer(modifier = Modifier.height(spacingXS))
@@ -415,5 +446,77 @@ fun LoginScreen(navController: NavController) {
         )
 
         Spacer(modifier = Modifier.height(spacingL))
+    }
+
+    // Diálogo de recuperación de contraseña
+    if (showRecuperarDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isSendingReset) showRecuperarDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = {
+                Text(
+                    "Recuperar contraseña",
+                    fontFamily = InriaSerif,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Escribe el correo de tu cuenta y te enviaremos un enlace para crear una nueva contraseña.",
+                        fontFamily = InriaSerif,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                    OutlinedTextField(
+                        value = emailRecuperar,
+                        onValueChange = { emailRecuperar = it },
+                        label = { Text("Correo electrónico", color = MaterialTheme.colorScheme.onSurface) },
+                        singleLine = true,
+                        enabled = !isSendingReset,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    enabled = !isSendingReset,
+                    onClick = {
+                        val email = emailRecuperar.trim()
+                        if (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                            Toast.makeText(context, "Escribe un correo válido", Toast.LENGTH_SHORT).show()
+                        } else {
+                            enviarCorreoRecuperacion(email)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text(
+                        if (isSendingReset) "Enviando..." else "Enviar enlace",
+                        fontFamily = InriaSerif,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !isSendingReset,
+                    onClick = { showRecuperarDialog = false }
+                ) {
+                    Text("Cancelar", fontFamily = InriaSerif, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        )
     }
 }
