@@ -1,9 +1,12 @@
 package com.example.luhikawa.ui
 
+import android.Manifest
 import android.app.TimePickerDialog
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Base64
 import android.widget.Toast
@@ -101,6 +104,7 @@ import com.canhub.cropper.CropImageContract
 import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
+import com.example.luhikawa.AlarmReceiver
 import com.example.luhikawa.R
 import com.example.luhikawa.data.AccountManager
 import com.example.luhikawa.data.StoredAccount
@@ -121,8 +125,23 @@ import com.example.luhikawa.data.UserRepository
 
 class MainActivityPerfil : FragmentActivity() {
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        if (!getSharedPreferences("alarm_prefs", MODE_PRIVATE).contains("hour")) {
+            AlarmReceiver.schedule(this, 8, 30)
+        }
 
         val auth = FirebaseAuth.getInstance()
         val rutaInicial = if (auth.currentUser != null) "greeting" else "login"
@@ -322,8 +341,8 @@ fun PerfilScreen(
 
     var showPreferencias by remember { mutableStateOf(false) }
 
-    var horaNotificacion by remember { mutableStateOf(8) }
-    var minutoNotificacion by remember { mutableStateOf(30) }
+    var horaNotificacion by remember { mutableStateOf(AlarmReceiver.getHora(context)) }
+    var minutoNotificacion by remember { mutableStateOf(AlarmReceiver.getMinuto(context)) }
 
     // Campos de formulario para edición
     var nuevoNombre by remember { mutableStateOf("") }
@@ -444,6 +463,8 @@ fun PerfilScreen(
         { _, hourOfDay, minute ->
             horaNotificacion = hourOfDay
             minutoNotificacion = minute
+
+            AlarmReceiver.schedule(context, hourOfDay, minute)
 
             Toast.makeText(
                 context,

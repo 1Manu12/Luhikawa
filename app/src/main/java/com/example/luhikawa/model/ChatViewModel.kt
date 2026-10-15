@@ -113,6 +113,7 @@ class ChatViewModel : ViewModel() {
 
                 agregarMensajeLuhi(procesarComandosCrud(textoOriginal))
             } catch (e: Exception) {
+                android.util.Log.e("LuhiError", "Fallo en la conexión: ${e.message}", e)
                 agregarMensajeLuhi("Error al conectar con Luhi")
             }
         }
