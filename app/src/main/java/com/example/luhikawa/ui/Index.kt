@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -259,7 +260,9 @@ fun Greeting(
 
     val fraseDelDia = rememberSaveable { frasesMotivacionales.random() }
     val prefs = remember { context.getSharedPreferences("luhikawa_prefs", Context.MODE_PRIVATE) }
+
     var frasesActivas by remember { mutableStateOf(prefs.getBoolean("frases_activas", true)) }
+    var gatoActivo by remember { mutableStateOf(prefs.getBoolean("gato_activo", true)) }
     var showMenuFrases by remember { mutableStateOf(false) }
 
     var listaDeTareas by remember(modo) {
@@ -564,12 +567,16 @@ fun Greeting(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .defaultMinSize(minHeight = 80.dp)
                         .pointerInput(Unit) {
                             detectTapGestures(onLongPress = { showMenuFrases = true })
                         }
                 ) {
-                    if (frasesActivas) {
-                        ImagenDerechaTextoIzquierda(frase = fraseDelDia)
+                    if (frasesActivas || gatoActivo) {
+                        ImagenDerechaTextoIzquierda(
+                            frase = if (frasesActivas) fraseDelDia else null,
+                            mostrarGato = gatoActivo
+                        )
                     }
 
                     DropdownMenu(
@@ -593,6 +600,27 @@ fun Greeting(
                                 Toast.makeText(
                                     context,
                                     if (frasesActivas) "Frases activadas" else "Frases desactivadas",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = if (gatoActivo) "Desactivar gato"
+                                    else "Activar gato",
+                                    fontFamily = InriaSerif,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            },
+                            onClick = {
+                                gatoActivo = !gatoActivo
+                                prefs.edit().putBoolean("gato_activo", gatoActivo).apply()
+                                showMenuFrases = false
+                                Toast.makeText(
+                                    context,
+                                    if (gatoActivo) "Gato activado" else "Gato desactivado",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }

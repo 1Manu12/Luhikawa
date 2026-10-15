@@ -150,7 +150,8 @@ fun EtiquetaTexto(
 
 @Composable
 fun ImagenDerechaTextoIzquierda(
-    frase: String = "Tómate tu tiempo.\nEl descanso también es productivo"
+    frase: String? = "Tómate tu tiempo.\nEl descanso también es productivo",
+    mostrarGato: Boolean = true
 ) {
     Row(
         modifier = Modifier
@@ -159,27 +160,33 @@ fun ImagenDerechaTextoIzquierda(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Box(
-            modifier = Modifier.width(180.dp)
-        ) {
-            Text(
-                text = frase,
-                style = TextStyle(
-                    fontFamily = InriaSerif,
-                    fontSize = 22.sp,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 22.sp
+        if (!frase.isNullOrEmpty()) {
+            Box(
+                modifier = Modifier.width(180.dp)
+            ) {
+                Text(
+                    text = frase,
+                    style = TextStyle(
+                        fontFamily = InriaSerif,
+                        fontSize = 22.sp,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 22.sp
+                    )
                 )
-            )
+            }
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
         }
 
-        Image(
-            painter = painterResource(id = R.drawable.gato),
-            contentDescription = "Gato descansando",
-            modifier = Modifier.size(150.dp),
-            contentScale = ContentScale.Fit
-        )
+        if (mostrarGato) {
+            Image(
+                painter = painterResource(id = R.drawable.gato),
+                contentDescription = "Gato descansando",
+                modifier = Modifier.size(150.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
     }
 }
 

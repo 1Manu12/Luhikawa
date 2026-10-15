@@ -1,10 +1,16 @@
 package com.example.luhikawa.ui
 
+import android.app.AlarmManager
 import android.app.TimePickerDialog
+import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import com.example.luhikawa.AlarmReceiver
 import android.util.Base64
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -444,6 +450,18 @@ fun PerfilScreen(
         { _, hourOfDay, minute ->
             horaNotificacion = hourOfDay
             minutoNotificacion = minute
+
+            // Android 12+: pedir permiso de alarma exacta si falta
+            val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !am.canScheduleExactAlarms()) {
+                context.startActivity(
+                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }
+
+            // Guarda la hora y programa la alarma diaria
+            AlarmReceiver.schedule(context, hourOfDay, minute)
 
             Toast.makeText(
                 context,
