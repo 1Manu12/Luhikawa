@@ -564,7 +564,6 @@ fun ParteAbajo(
                 },
             contentAlignment = Alignment.Center
         ) {
-            // Icono o contenido del recordatorio si lo lleva dentro
         }
 // HOME / AGENDA
         Box(
