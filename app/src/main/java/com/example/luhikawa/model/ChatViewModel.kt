@@ -35,7 +35,7 @@ class ChatViewModel : ViewModel() {
     private val chat = Chat()
     var conversationBot : Int = 0
 
-    private var geminiUse = false
+    var geminiUse = false
     private val db = FirebaseFirestore.getInstance()
     private val claveApi = BuildConfig.ApiKey
 
@@ -126,15 +126,21 @@ class ChatViewModel : ViewModel() {
                     }
 
                     1 -> {
-                        conversationBot = 2
                         val selectionBot = textoLimpio.toInt()
-                        agregarMensajeLuhi(chat.message(selectionBot), false)
+                        if(selectionBot == 1 || selectionBot == 2 || selectionBot == 3) {
+                            conversationBot = 2
+                            agregarMensajeLuhi(chat.message(selectionBot), false)
+                        }else {
+                            agregarMensajeLuhi("Opcion no correcta, intente de nuevo...")
+                        }
                     }
 
                     2 -> {
-                        if (chat.waitingData) {
+                        if (chat.waitingData == true) {
                             agregarMensajeLuhi(chat.dataCollector(textoLimpio), false)
+                            agregarMensajeLuhi("Recuerda de modificar la fecha de entrega ya que estas son predeterminadas por el bot con la misma fecha de hoy")
                             conversationBot = 0
+                            chat.waitingData = false
                         }
 
                         if (chat.fail) {
@@ -144,20 +150,15 @@ class ChatViewModel : ViewModel() {
                         }
 
 
-
-                        if (chat.ask == 2) {
-                            //llamar funcion lector de datos de firebase para calcular
+                        if (chat.ask == 2 ) {
+                           agregarMensajeLuhi(chat.activateModelB())
                         } else if (chat.ask == 3) {
-                            //llamar funcion lector de datos de firebase para calcular +2
-                        } else if (chat.ask == 4) {
                             conversationBot = 3
-                        } else {
-
                         }
                     }
 
                     3 -> {
-                        if (chat.ask == 4) {
+                        if (chat.ask == 3) {
                             val confirm = textoLimpio.toInt()
                             if (confirm == 1 || confirm == 2) {
                                 when (confirm) {

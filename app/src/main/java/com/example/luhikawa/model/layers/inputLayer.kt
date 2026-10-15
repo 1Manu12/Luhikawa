@@ -5,8 +5,11 @@ import androidx.annotation.RequiresApi
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
+import com.example.luhikawa.data.TaskRepository
 
-class InputLayer {
+class InputLayer(
+    val BD : TaskRepository
+) {
 
     @RequiresApi(Build.VERSION_CODES.O)
 
@@ -38,6 +41,43 @@ class InputLayer {
         }
 
         return dataPackage.toTypedArray()
+    }
+
+    fun searchData(ask: Int): List<Boolean> {
+
+        val jobsCompleted = mutableListOf<Boolean>()
+
+        TaskRepository().getTasksQuery("Trabajo")
+            .get()
+            .addOnSuccessListener { result ->
+
+                for (document in result.documents) {
+                    val completed = document.getBoolean("completed") ?: false
+
+                    if(completed){
+                        jobsCompleted.add(completed)
+                    }else{
+                        jobsCompleted.add(completed)
+                    }
+                }
+            }
+
+        TaskRepository().getTasksQuery("Estudio")
+            .get()
+            .addOnSuccessListener { result ->
+
+                for (document in result.documents) {
+                    val completed = document.getBoolean("completed") ?: false
+
+                    if(completed){
+                        jobsCompleted.add(completed)
+                    }else{
+                        jobsCompleted.add(completed)
+                    }
+                }
+            }
+
+        return jobsCompleted.toList()
     }
 
 }

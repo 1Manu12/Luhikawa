@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Home
@@ -48,8 +47,6 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -83,6 +80,9 @@ import com.example.luhikawa.ui.theme.AccentVinoTinto
 import com.example.luhikawa.ui.theme.AppTheme
 import com.example.luhikawa.ui.theme.InriaSerif
 import androidx.compose.ui.graphics.luminance
+import com.example.luhikawa.model.ChatViewModel
+
+private val chatView = ChatViewModel()
 
 @Composable
 fun RectanguloConImagen() {
@@ -536,6 +536,13 @@ fun ParteAbajo(
                             restoreState = true
                         }
                     }
+                },
+                onDoubleTap = {
+                    if(chatView.geminiUse){
+                        chatView.geminiUse = false
+                    }else{
+                        chatView.geminiUse = true
+                    }
                 }
             )
         }
@@ -626,7 +633,8 @@ fun BottomNavItem(
     icon: ImageVector,
     contentDescription: String,
     tint: Color = MaterialTheme.colorScheme.onSurface,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDoubleTap: (() -> Unit)? = null
 ) {
     Icon(
         imageVector = icon,

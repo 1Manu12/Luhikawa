@@ -63,6 +63,9 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
+    //currutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
     // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
@@ -72,6 +75,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Firebase (Gestionado mediante un solo BOM)
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))

@@ -16,12 +16,6 @@ class Chat {
     var ask : Int = 0
     private val network = network()
     var waitingData : Boolean = false
-        get() {
-            return field
-        }
-        set(value) {
-            field = value
-        }
 
     init {
         network.createNeurons()
@@ -33,8 +27,7 @@ class Chat {
            
            1) Te ayudo crear una tarea con las especificaciones que me des.
            2) Crear una tarea adaptada a ti, segun mi criterio.
-           3) Recomendarte que tareas debes de hacer primero.
-           4) Resetea toda tu informacion.
+           3) Resetea toda tu informacion.
            
            ¡estare listo para cuando tu lo estes, digita el numero correspondiente a la opcion y empezamos!
            
@@ -68,12 +61,9 @@ class Chat {
                 return especificts()
             }
             2 -> {
-                return especificts()
+                return activateModelB()
             }
             3 -> {
-
-            }
-            4 -> {
                 return """
                   ¡ALERTA! 
                     ¿Estas seguro de que deseas resetear el bot?
@@ -98,7 +88,7 @@ class Chat {
 
         if (data.isEmpty()){
             fail = true
-            return "añadir error"
+            return "El mensaje que enviaste esta vacio o no contiene las especificaiones pedidas, intenta de nuevo"
         } else {
             val dataList: List<Any> = data
                 .split(",")
@@ -108,7 +98,7 @@ class Chat {
                 return activateModel(dataList, ask)
             }else{
                 fail = true
-                return "añadir error"
+                return "No se puede digitar mas de 8 datos..., intenta de nuevo"
             }
         }
     }
@@ -122,9 +112,12 @@ class Chat {
         }
     }
 
+    fun activateModelB():String {
+        return network.networkB(ask)
+    }
+
     fun resetModel(){
         network.neuronsDefaultValue()
-
     }
 
 }

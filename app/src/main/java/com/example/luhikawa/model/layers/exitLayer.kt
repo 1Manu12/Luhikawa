@@ -1,18 +1,18 @@
 package com.example.luhikawa.model.layers;
 
-import android.widget.Toast
 import com.example.luhikawa.data.TaskRepository
-import com.example.luhikawa.domain.Chat
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-class exitLayer() {
+class exitLayer(
+    val BD : TaskRepository
+) {
     var finalAnswer : String = ""
         private set
 
-    val BD = TaskRepository()
+
 
     private val answers = mapOf(
         1 to listOf(
@@ -26,6 +26,7 @@ class exitLayer() {
             "Tarea creada la pudes revisar cuando desees.",
             "Creacion exitosa."
         ),
+
     )
     fun lector(result : Double, ask : Int){
 
@@ -35,32 +36,71 @@ class exitLayer() {
 
     fun interpreter(data : Double, ask : Int):String{
         var answer ="nothing"
+        var importance="No-especifico"
 
         if(ask == 1) {
             when  {
-                data >= 0.8 -> {
+                data >= 0.999 -> {
                     answer = "Perfecto tarea creada, la tines bastante complicada, "+ answers[1]?.random()
+                    importance = "Alta"
                 }
 
-                data >= 0.5 -> {
+                data >= 0.993 -> {
                    answer = "Listo, tarea creada, tienes que meterle buen esfuerzo para que logres acabarla, "+ answers[1]?.random()
+                    importance = "Media"
                 }
 
-                data >= 0.3 -> {
+                data >= 0.7 -> {
                     answer = "echo tarea creada, es practicamante pan comido."
+                    importance = "Baja"
                 }
 
                 else -> {
                     answer ="Tarea añadida es pan comido, solo no la ignores... "
+                    importance = "Baja"
                 }
             }
 
+            actions("create", importance)
+
+        }else if(ask == 2){
+            when  {
+                data >= 0.999 -> {
+                    answer = "listo, "+answers[2]?.random()
+                    importance = "Alta"
+                }
+
+                data >= 0.993 -> {
+                    answer = "creacion exitosa, "+answers[2]?.random()
+                    importance = "Media"
+                }
+
+                data >= 0.7 -> {
+                    answer = "perfecto, "+answers[2]?.random()
+                    importance = "Baja"
+                }
+
+                else -> {
+                    answer ="es pan comido, "+answers[2]?.random()
+                    importance = "Baja"
+                }
+            }
+
+            actions("create", importance)
+
+        }
+        return answer
+    }
+
+    fun actions(actions : String, importance : String){
+
+        if(actions == "create") {
             val format = DateTimeFormatter
                 .ofPattern("dd MMM yyyy", Locale.getDefault())
 
             val dateFormat = LocalDate.now().format(format)
 
-            val hour= LocalTime.now()
+            val hour = LocalTime.now()
                 .format(DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()))
 
             val newTask = mapOf<String, Any>(
@@ -69,43 +109,22 @@ class exitLayer() {
                 "date" to dateFormat.toString(),
                 "dueDate" to dateFormat.toString(),
                 "icon" to 0,
-                "importance" to "Alta",
+                "importance" to importance,
                 "time" to hour.toString(),
                 "title" to "no especifica"
             )
 
-            BD.saveTask(newTask,
+            BD.saveTask(
+                newTask,
                 onSuccess = {
-                    println("chechechevere")
+
                 },
 
                 onFailure = { error ->
-                    println("error")
+
                 }
             )
-
-        }else if(ask == 2){
-            when  {
-                data >= 0.8 -> {
-                    answer = "listo, "+answers[2]?.random()
-                }
-
-                data >= 0.5 -> {
-                    answer = "creacion exitosa, "+answers[2]?.random()
-                }
-
-                data >= 0.3 -> {
-                    answer = "perfecto, "+answers[2]?.random()
-                }
-
-                else -> {
-                    answer ="es pan comido, "+answers[2]?.random()
-                }
-            }
-
         }
-
-        return answer
     }
 
 }
